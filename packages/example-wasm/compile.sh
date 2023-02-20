@@ -10,6 +10,22 @@
 
 # Uncomment -s "FILESYSTEM=0" if you don't need to use fs
 
+echo
+echo
+echo "BUILDING LPLIB TO JS...."
+
 # if you create more dependencies of fib.cc, simply add them to the end of the below command, like: -o ./fib.js fib.cc add.cc anotherdep.cc and_so_on.cc
-em++ -O3 -s WASM=1 -s EXPORTED_RUNTIME_METHODS='[\"cwrap\"]' -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s 'EXPORT_NAME="fib"' -s 'EXPORTED_FUNCTIONS=["_fib"]' -s "ENVIRONMENT='web'" -o ./fib.js fib.cc add.cc
+em++ -O3 -s WASM=1 \
+         -s EXPORTED_RUNTIME_METHODS='[\"cwrap\"]' \
+         -s ALLOW_MEMORY_GROWTH=1 \
+         -s MODULARIZE=1 \
+         -s 'EXPORT_NAME="fib"' \
+         -s 'EXPORTED_FUNCTIONS=["_fib", "_jstest"]' \
+         -s "ENVIRONMENT='web'" -o ./fib.js \
+         -s "SINGLE_FILE" \
+         src/*.cc src/*.c src/duktape/duktape.c
     # -s "FILESYSTEM=0"
+
+echo "DONE...."
+echo
+echo
