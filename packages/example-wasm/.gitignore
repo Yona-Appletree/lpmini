@@ -1,3 +1,4 @@
-fib.js
+build/lp_api.js
 fib.wasm
 build
+cmake-*

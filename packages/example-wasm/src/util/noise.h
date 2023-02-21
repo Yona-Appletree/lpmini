@@ -1,5 +1,5 @@
 
-#include <cstdint>
+#include <stdint.h>
 
 double perlin3(
   double x,

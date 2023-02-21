@@ -1,6 +1,6 @@
+import HtmlWebpackPlugin from "html-webpack-plugin"
 import path from "path"
 import webpack from "webpack"
-import HtmlWebpackPlugin from "html-webpack-plugin"
 
 export const commonConfig: webpack.Configuration = {
   entry: `./src/index.tsx`,
@@ -36,18 +36,18 @@ export const commonConfig: webpack.Configuration = {
         exclude: /node_modules/,
       },
       {
-        test: /fib\.js$/,
+        test: /lp_api\.js$/,
         loader: `exports-loader`,
         options: {
           type: `module`,
           // this MUST be equivalent to EXPORT_NAME in complile.sh
-          exports: `fib`,
+          exports: `lp_api`,
         },
       },
       // wasm files should not be processed but just be emitted and we want
       // to have their public URL.
       {
-        test: /fib\.wasm$/,
+        test: /lp_api\.wasm$/,
         type: `javascript/auto`,
         loader: `file-loader`,
         // options: {
@@ -58,15 +58,24 @@ export const commonConfig: webpack.Configuration = {
     ],
   },
   resolve: {
-    extensions: [`.tsx`, `.ts`, `.js`],
+    extensions: [ `.tsx`, `.ts`, `.js` ],
   },
   output: {
     filename: `bundle.js`,
-    path: path.resolve(__dirname, `..`, `dist`),
+    path: path.resolve(
+      __dirname,
+      `..`,
+      `dist`
+    ),
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: path.join(__dirname, `..`, `public`, `index.html`),
+      template: path.join(
+        __dirname,
+        `..`,
+        `public`,
+        `index.html`
+      ),
     }),
   ],
 }

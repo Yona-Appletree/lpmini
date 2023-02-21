@@ -14,16 +14,22 @@ echo
 echo
 echo "BUILDING LPLIB TO JS...."
 
+EXPORTED_FUNCTIONS=$(egrep -o 'lpapi_\w+' src/lpapi.h | tr '\n' ' ' | sed 's/ /","_/g' | sed 's/^/["_/' | sed 's/,"_$/]/')
+
+echo "FUNCTIONS: $EXPORTED_FUNCTIONS"
+
+
 # if you create more dependencies of fib.cc, simply add them to the end of the below command, like: -o ./fib.js fib.cc add.cc anotherdep.cc and_so_on.cc
 em++ -O3 -s WASM=1 \
-         -s EXPORTED_RUNTIME_METHODS='[\"cwrap\"]' \
+         -s EXPORTED_RUNTIME_METHODS='ccall,cwrap' \
          -s ALLOW_MEMORY_GROWTH=1 \
          -s MODULARIZE=1 \
-         -s 'EXPORT_NAME="fib"' \
-         -s 'EXPORTED_FUNCTIONS=["_fib", "_jstest"]' \
-         -s "ENVIRONMENT='web'" -o ./fib.js \
+         -s EXPORT_NAME=lp_api \
+         -s EXPORTED_FUNCTIONS="$EXPORTED_FUNCTIONS" \
+         -s ENVIRONMENT=web \
+         -o ./build/lp_api.js \
          -s "SINGLE_FILE" \
-         src/*.cc src/*.c src/duktape/duktape.c
+         $(find src -iname '*.c' -or -iname '*.cc' -or -iname '*.cpp')
     # -s "FILESYSTEM=0"
 
 echo "DONE...."
