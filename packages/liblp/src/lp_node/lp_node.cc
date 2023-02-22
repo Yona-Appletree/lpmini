@@ -2,9 +2,15 @@
 #include "lp_noise_node/lp_noise_node.h"
 #include "../util/lp_duktape.h"
 #include "../lp_obj/lp_obj.h"
+#include "lp_expr_node/lp_expr_node.h"
+#include "lp_map_node/lp_map_node.h"
+#include "lp_func_node/lp_func_node.h"
 
 const lp_node_type_def *lp_node_type_defs[] = {
   &lp_noise_node_def,
+  &lp_expr_node_def,
+  &lp_map_node_def,
+  &lp_func_node_def,
   nullptr
 };
 
@@ -26,9 +32,6 @@ int lp_node_eval(
 ) {
   duk_context *duk_ctx = lp_ctx->duk_ctx;
 
-  LP_OBJ_ASSERT_STACK_INDEX(lp_obj_scope_instance, scopeIdx)
-  LP_OBJ_ASSERT_STACK_INDEX(lp_obj_node_instance, nodeIdx)
-
   duk_get_prop_string(duk_ctx, nodeIdx, "nodeType");
   const char *node_type_id = duk_get_string(duk_ctx, -1);
   const lp_node_type_def *node_type_def = lp_node_type_def_by_id(node_type_id);
@@ -36,6 +39,26 @@ int lp_node_eval(
 
   if (node_type_def->eval_func != nullptr) {
     node_type_def->eval_func(lp_ctx, contextIdx, scopeIdx, nodeIdx);
+  }
+
+  return 0;
+}
+
+int lp_node_update(
+  lp_context *lp_ctx,
+  int contextIdx,
+  int scopeIdx,
+  int nodeIdx
+) {
+  duk_context *duk_ctx = lp_ctx->duk_ctx;
+
+  duk_get_prop_string(duk_ctx, nodeIdx, "nodeType");
+  const char *node_type_id = duk_get_string(duk_ctx, -1);
+  const lp_node_type_def *node_type_def = lp_node_type_def_by_id(node_type_id);
+  duk_pop(duk_ctx);
+
+  if (node_type_def->update_func != nullptr) {
+    node_type_def->update_func(lp_ctx, contextIdx, scopeIdx, nodeIdx);
   }
 
   return 0;

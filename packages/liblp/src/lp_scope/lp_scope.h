@@ -10,18 +10,32 @@
  * @param lp_ctx
  * @return
  */
-int contextIdx(
+int lp_scope_create(
   lp_context *lp_ctx,
   int contextIdx
 );
 
 /**
- * Evaluates all nodes in a scope, expects the scope to be on the top of the stack.
+ * Evaluates all nodes in a scope.
  *
  * @param lp_ctx
  * @return
  */
 int lp_scope_eval(
+  lp_context *lp_ctx,
+  int contextIdx,
+  int scopeIdx
+);
+
+/**
+ * Updates all nodes in a scope.
+ *
+ * @param lp_ctx
+ * @param contextIdx
+ * @param scopeIdx
+ * @return
+ */
+int lp_scope_update(
   lp_context *lp_ctx,
   int contextIdx,
   int scopeIdx

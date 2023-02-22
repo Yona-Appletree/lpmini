@@ -79,7 +79,7 @@ lp_context *lp_context_create(
     lp_ctx,
     lp_context_fatal_error_handler
   );
-  lp_ctx->frame_id = 0;
+  lp_ctx->frame_counter = 0;
   lp_ctx->heap_size = 0;
 
   duk_context *duk_ctx = lp_ctx->duk_ctx;
@@ -100,7 +100,7 @@ lp_context *lp_context_create(
 
   // Create the root scope
   duk_get_prop_string(duk_ctx, contexDefIdx, "rootScopeDef");
-  contextIdx(lp_ctx, contexIdx);
+  lp_scope_create(lp_ctx, contexIdx);
   duk_put_prop_string(duk_ctx, contexIdx, "rootScope");
 
   duk_pop_2(duk_ctx);
@@ -142,4 +142,19 @@ const char *lp_context_to_json(
   const char *json = duk_get_string(duk_ctx, -1);
   duk_pop(duk_ctx);
   return json;
+}
+
+int lp_context_update(
+  lp_context *lp_ctx
+) {
+  duk_context *duk_ctx = lp_ctx->duk_ctx;
+
+  duk_get_global_string(duk_ctx, "context");
+  int contextIdx = LP_OBJ_ASSERT_STACK(lp_obj_context_instance);
+
+  duk_get_prop_string(duk_ctx, contextIdx, "rootScope");
+  int scopeIdx = LP_OBJ_ASSERT_STACK(lp_obj_scope_instance);
+
+  lp_scope_update(lp_ctx, contextIdx, scopeIdx);
+  duk_pop_2(duk_ctx);
 }

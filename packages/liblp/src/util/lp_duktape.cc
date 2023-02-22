@@ -227,3 +227,58 @@ void lpduk_set_prop_empty_object(
   duk_push_object(duk_ctx);
   duk_put_prop_string(duk_ctx, index, name);
 }
+
+
+void lpduk_set_prop_number(
+  duk_context *duk_ctx,
+  int index,
+  const char *name,
+  double number
+) {
+  index = duk_normalize_index(duk_ctx, index);
+
+  duk_push_number(duk_ctx, number);
+  duk_put_prop_string(duk_ctx, index, name);
+}
+
+void lpduk_get_path(
+  duk_context *duk_ctx,
+  int rootIdx,
+  int pathArrayIdx
+) {
+  // Push the root on the top of the stack
+  duk_dup(duk_ctx, rootIdx);
+  int resultIdx = duk_normalize_index(duk_ctx, -1);
+
+  duk_enum(duk_ctx, pathArrayIdx, 0);
+  while (duk_next(duk_ctx, -1, 1)) {
+    duk_get_prop(duk_ctx, resultIdx);
+    duk_swap_top(duk_ctx, resultIdx);
+    duk_pop_2(duk_ctx);
+  }
+  duk_pop(duk_ctx);
+}
+
+void lpduk_set_path(
+  duk_context *duk_ctx,
+  int rootIdx,
+  int pathArrayIdx,
+  int valueIdx
+) {
+  // Push the root on the top of the stack
+  duk_dup(duk_ctx, rootIdx);
+  int tempIdx = duk_normalize_index(duk_ctx, -1);
+
+  auto length = duk_get_length(duk_ctx, pathArrayIdx);
+  for (int i = 0; i < length; i++) {
+    duk_get_prop_index(duk_ctx, pathArrayIdx, i);
+    if (i == length - 1) {
+      duk_dup(duk_ctx, valueIdx);
+      duk_put_prop(duk_ctx, tempIdx);
+    } else {
+      duk_get_prop(duk_ctx, tempIdx);
+      duk_swap_top(duk_ctx, tempIdx);
+      duk_pop(duk_ctx);
+    }
+  }
+}

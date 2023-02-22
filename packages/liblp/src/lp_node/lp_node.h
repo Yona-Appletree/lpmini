@@ -54,4 +54,17 @@ int lp_node_eval(
   int nodeIdx
 );
 
+/**
+ * Update a given node.
+ *
+ * @param lp_ctx
+ * @return
+ */
+int lp_node_update(
+  lp_context *lp_ctx,
+  int contextIdx,
+  int scopeIdx,
+  int nodeIdx
+);
+
 #endif

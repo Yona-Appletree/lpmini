@@ -74,4 +74,35 @@ void lpduk_set_prop_empty_object(
   const char *name
 );
 
+void lpduk_set_prop_number(
+  duk_context *duk_ctx,
+  int index,
+  const char *name,
+  double number
+);
+
+
+/**
+ * Resolves a path in a given stack object.
+ *
+ * The path is an array of strings or numbers.
+ * The root object is the object on the top of the stack.
+ * The result object is left on the top of the stack.
+ *
+ * An empty array, or other value, will result in the root object.
+ *
+ */
+void lpduk_get_path(
+  duk_context *duk_ctx,
+  int rootIdx,
+  int pathArrayIdx
+);
+
+void lpduk_set_path(
+  duk_context *duk_ctx,
+  int rootIdx,
+  int pathArrayIdx,
+  int valueIdx
+);
+
 #endif

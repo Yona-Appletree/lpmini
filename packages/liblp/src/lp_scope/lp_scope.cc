@@ -15,7 +15,7 @@
  *
  * @param ctx
  */
-int contextIdx(
+int lp_scope_create(
   lp_context *lp_ctx,
   int contextIdx
 ) {
@@ -192,6 +192,29 @@ int lp_scope_eval(
   }
 
   duk_pop(duk_ctx);
+
+  return 0;
+}
+
+
+int lp_scope_update(
+  lp_context *lp_ctx,
+  int contextIdx,
+  int scopeIdx
+) {
+  duk_context *duk_ctx = lp_ctx->duk_ctx;
+
+  LP_OBJ_ASSERT_STACK(lp_obj_scope_instance)
+
+  // Iterate the nodes in the scope
+  duk_get_prop_string(duk_ctx, scopeIdx, "nodes");
+  duk_enum(duk_ctx, -1, 0);
+  while (duk_next(duk_ctx, -1, 1)) {
+    int nodeIdx = duk_normalize_index(duk_ctx, -1);
+    lp_node_update(lp_ctx, contextIdx, scopeIdx, nodeIdx);
+    duk_pop_2(duk_ctx);
+  }
+  duk_pop_2(duk_ctx);
 
   return 0;
 }

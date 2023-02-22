@@ -1,7 +1,7 @@
-import { lp_node_type_def } from "../lp_node";
+import { lp_node_instance } from "../lp_node";
 
-export const lp_noise_node_type_def = {
-  "objType": "node_type_def",
+export const lp_noise_node_template = {
+  "objType": "node_instance",
   "nodeType": "noise",
   "input": {
     "pos": [ 0, 0, 0 ],
@@ -10,5 +10,6 @@ export const lp_noise_node_type_def = {
   },
   "output": 0,
   "config": {},
-  "state": {}
-} satisfies lp_node_type_def<"noise">;
+  "state": {},
+  "connections": {}
+} satisfies lp_node_instance<"noise">;
