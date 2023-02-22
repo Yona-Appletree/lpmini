@@ -35,7 +35,7 @@ int lp_node_eval(
   duk_pop(duk_ctx);
 
   if (node_type_def->eval_func != nullptr) {
-    node_type_def->eval_func(lp_ctx, scopeIdx, nodeIdx);
+    node_type_def->eval_func(lp_ctx, contextIdx, scopeIdx, nodeIdx);
   }
 
   return 0;
@@ -44,6 +44,8 @@ int lp_node_eval(
 int lp_node_create(
   lp_context *lp_ctx,
   const char *nodeId,
+  int contextId,
+  int scopeIdx,
   int nodeDefIdx
 ) {
   duk_context *duk_ctx = lp_ctx->duk_ctx;
@@ -77,7 +79,7 @@ int lp_node_create(
 
   LP_OBJ_ASSERT_STACK(lp_obj_node_instance)
 
-  node_type_def->init_func(lp_ctx);
+  node_type_def->init_func(lp_ctx, contextId, scopeIdx, nodeInstIdx);
 
   return 0;
 }

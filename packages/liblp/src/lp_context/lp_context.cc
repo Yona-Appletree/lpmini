@@ -100,7 +100,7 @@ lp_context *lp_context_create(
 
   // Create the root scope
   duk_get_prop_string(duk_ctx, contexDefIdx, "rootScopeDef");
-  lp_scope_create(lp_ctx);
+  contextIdx(lp_ctx, contexIdx);
   duk_put_prop_string(duk_ctx, contexIdx, "rootScope");
 
   duk_pop_2(duk_ctx);

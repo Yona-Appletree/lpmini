@@ -10,8 +10,9 @@
  * @param lp_ctx
  * @return
  */
-int lp_scope_create(
-  lp_context *lp_ctx
+int contextIdx(
+  lp_context *lp_ctx,
+  int contextIdx
 );
 
 /**

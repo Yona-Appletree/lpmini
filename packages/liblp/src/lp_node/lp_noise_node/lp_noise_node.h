@@ -6,14 +6,32 @@
 
 extern const lp_node_type_def lp_noise_node_def;
 
-int lp_noise_node_init(lp_context *ctx);
-
-int lp_noise_node_eval(
+int lp_noise_node_init(
   lp_context *ctx,
+  int contextIdx,
   int scopeIdx,
   int nodeIdx
 );
 
-int lp_noise_node_destroy(lp_context *ctx);
+int lp_noise_node_eval(
+  lp_context *ctx,
+  int contextIdx,
+  int scopeIdx,
+  int nodeIdx
+);
+
+int lp_noise_node_update(
+  lp_context *ctx,
+  int contextIdx,
+  int scopeIdx,
+  int nodeIdx
+);
+
+int lp_noise_node_destroy(
+  lp_context *ctx,
+  int contextIdx,
+  int scopeIdx,
+  int nodeIdx
+);
 
 #endif

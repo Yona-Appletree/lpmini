@@ -10,17 +10,18 @@
 /**
  * Creates a new node scope for the given config and initializes the nodes.
  *
- * Assumes the context definition is on the stack.
- * Leaves the new scope object on the stack.
+ * Assumes the scope definition is on the stack.
+ * Replaces it with the scope instance.
  *
  * @param ctx
  */
-int lp_scope_create(
-  lp_context *lp_ctx
+int contextIdx(
+  lp_context *lp_ctx,
+  int contextIdx
 ) {
   auto duk_ctx = lp_ctx->duk_ctx;
 
-  LP_OBJ_ASSERT_STACK(lp_obj_scope_def)
+  int scopeIdx = LP_OBJ_ASSERT_STACK(lp_obj_scope_def)
 
   // [scope_def]
   // Change the object type to "scope_instance"
@@ -41,7 +42,7 @@ int lp_scope_create(
     int nodeDefIdx = duk_normalize_index(duk_ctx, -1);
 
     // Create the node
-    lp_node_create(lp_ctx, id, nodeDefIdx);
+    lp_node_create(lp_ctx, id, contextIdx, scopeIdx, nodeDefIdx);
     LP_OBJ_ASSERT_STACK("node_instance")
     // [scope_instance, nodes, enum, key, node_def, node_instance]
     duk_swap_top(duk_ctx, -2);

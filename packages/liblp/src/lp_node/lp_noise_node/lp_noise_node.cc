@@ -21,18 +21,32 @@ const lp_node_type_def lp_noise_node_def = {
 }
 )",
   .init_func = lp_noise_node_init,
+  .update_func = lp_noise_node_update,
   .eval_func = lp_noise_node_eval,
   .destroy_func = lp_noise_node_destroy,
 };
 
 int lp_noise_node_init(
-  lp_context *lp_ctx
+  lp_context *lp_ctx,
+  int contextIdx,
+  int scopeIdx,
+  int nodeIdx
+) {
+  return 0;
+}
+
+int lp_noise_node_update(
+  lp_context *lp_ctx,
+  int contextIdx,
+  int scopeIdx,
+  int nodeIdx
 ) {
   return 0;
 }
 
 int lp_noise_node_eval(
   lp_context *lp_ctx,
+  int contextIdx,
   int scopeIdx,
   int nodeIdx
 ) {
@@ -61,7 +75,10 @@ int lp_noise_node_eval(
 }
 
 int lp_noise_node_destroy(
-  lp_context *lp_ctx
+  lp_context *lp_ctx,
+  int contextIdx,
+  int scopeIdx,
+  int nodeIdx
 ) {
   return 0;
 }

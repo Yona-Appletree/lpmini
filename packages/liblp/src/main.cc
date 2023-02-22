@@ -33,6 +33,13 @@ int main() {
         "input": {
           "pos": [0.5, 0.2, 0.1]
         }
+      },
+      "node1": {
+        "objType": "node_def",
+        "nodeType": "noise",
+        "input": {
+          "pos": [0.5, 0.2, 0.1]
+        }
       }
     },
     "connections": {},
