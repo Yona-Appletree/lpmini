@@ -43,7 +43,7 @@ First, you will need to build the dockerfile. You can use your own `em++` locall
 to use docker container instead.
 
 ```bash
-$ cd packages/example-wasm 
+$ cd packages/liblp 
 
 $ ls
 add.cc            dockerutil.sh     lp_api.wasm          package-lock.json
@@ -61,13 +61,13 @@ $ ./dockerutil.sh -c build # download & build docker image
  => => transferring context: 2B                                         0.0s
  => [internal] load metadata for docker.io/emscripten/emsdk:latest      0.0s
  => CACHED [1/4] FROM docker.io/emscripten/emsdk:latest                 0.0s
- => [2/4] WORKDIR /etc/example-wasm                                     0.0s
+ => [2/4] WORKDIR /etc/liblp                                     0.0s
  => [3/4] RUN ls -la                                                    0.3s
  => [4/4] RUN which em++                                                0.3s
  => exporting to image                                                  0.0s
  => => exporting layers                                                 0.0s
  => => writing image sha256:c4243b91ba65d543b6ace91d2ca6faf0bed700196f  0.0s
- => => naming to docker.io/library/example-wasm                         0.0s
+ => => naming to docker.io/library/liblp                         0.0s
 
 Use 'docker scan' to run Snyk tests against images to find vulnerabilities and learn how to fix them
 ```
@@ -128,7 +128,8 @@ const wasm = lp_api({
 export default wasm
 ```
 
-And here's the type definition (Emscripten does not create one for you, so I created it myself, and you will need to too
+And here's the node_type_id definition (Emscripten does not create one for you, so I created it myself, and you will
+need to too
 if you want):
 
 ```ts
@@ -177,8 +178,8 @@ We put this in `module.rules` in webpack config:
         options
 :
     {
-        type: `module`,
-            // this MUST be equivalent to EXPORT_NAME in packages/example-wasm/complile.sh
+        node_type_id: `module`,
+            // this MUST be equivalent to EXPORT_NAME in packages/liblp/complile.sh
             exports
     :
         `lp_api`,
@@ -190,7 +191,7 @@ We put this in `module.rules` in webpack config:
 // to have their public URL.
 {
     test: /lp_api\.wasm$/,
-        type
+        node_type_id
 :
     `javascript/auto`,
         loader
@@ -239,10 +240,12 @@ import React, { useEffect, useState } from "react"
 import { FC } from "react"
 import { enhance } from "../../utilities/essentials"
 import { ExampleFallback } from "./fallback"
-import fibWasmPromise from "@emscripten-cplusplus-webpack-example/example-wasm"
+import fibWasmPromise from "@emscripten-cplusplus-webpack-example/liblp"
 
 // eslint-disable-next-line @typescript-eslint/ban-types
-export type ExampleImpureProps = {}
+export
+node_type_id
+ExampleImpureProps = {}
 
 export const ExampleImpure: FC<ExampleImpureProps> =
   enhance<ExampleImpureProps>(() => {
@@ -273,7 +276,9 @@ export const ExampleImpure: FC<ExampleImpureProps> =
     ExampleFallback)
 
 // eslint-disable-next-line @typescript-eslint/ban-types
-export type ExamplePureProps = {
+export
+node_type_id
+ExamplePureProps = {
   fibResult: number | null
 }
 
