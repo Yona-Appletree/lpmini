@@ -24,18 +24,63 @@ static void lp_context_fatal_error_handler(
   abort();
 }
 
+
+void *lp_context_alloc(
+  void *lp_ctx,
+  duk_size_t size
+) {
+  auto result = (duk_size_t *) malloc(size + sizeof(duk_size_t));
+  result[0] = size;
+  ((lp_context *) lp_ctx)->heap_size += size;
+  //printf("alloc: %zu, heap_size: %zu\n", size, ((lp_context *) lp_ctx)->heap_size);
+  return result + 1;
+}
+
+void *lp_context_realloc(
+  void *lp_ctx,
+  void *ptr,
+  duk_size_t size
+) {
+  duk_size_t *actual_ptr = (duk_size_t *) ptr - 1;
+  auto old_size = actual_ptr[0];
+
+  ((lp_context *) lp_ctx)->heap_size += size - old_size;
+
+  auto *result = (duk_size_t *) realloc(actual_ptr, size + sizeof(duk_size_t));
+  result[0] = size;
+  //printf("realloc: %zu -> %zu, heap_size: %zu\n", old_size, size, ((lp_context *) lp_ctx)->heap_size);
+  return result + 1;
+}
+
+void lp_context_free(
+  void *lp_ctx,
+  void *ptr
+) {
+  if (ptr == nullptr) {
+    return;
+  }
+  duk_size_t *actual_ptr = (duk_size_t *) ptr - 1;
+  auto old_size = actual_ptr[0];
+
+  ((lp_context *) lp_ctx)->heap_size -= old_size;
+
+  //printf("free: %zu, heap_size: %zu\n", old_size, ((lp_context *) lp_ctx)->heap_size);
+  free(actual_ptr);
+}
+
 lp_context *lp_context_create(
   const char *lp_context_def_json
 ) {
   lp_context *lp_ctx = new lp_context;
   lp_ctx->duk_ctx = duk_create_heap(
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
+    lp_context_alloc,
+    lp_context_realloc,
+    lp_context_free,
+    lp_ctx,
     lp_context_fatal_error_handler
   );
   lp_ctx->frame_id = 0;
+  lp_ctx->heap_size = 0;
 
   duk_context *duk_ctx = lp_ctx->duk_ctx;
 
@@ -85,4 +130,16 @@ int *lp_context_eval(
 
   lp_scope_eval(lp_ctx, contextIdx, scopeIdx);
   duk_pop_2(duk_ctx);
+}
+
+const char *lp_context_to_json(
+  lp_context *lp_ctx
+) {
+  duk_context *duk_ctx = lp_ctx->duk_ctx;
+  duk_get_global_string(duk_ctx, "context");
+  int contextIdx = LP_OBJ_ASSERT_STACK(lp_obj_context_instance);
+  duk_json_encode(duk_ctx, contextIdx);
+  const char *json = duk_get_string(duk_ctx, -1);
+  duk_pop(duk_ctx);
+  return json;
 }

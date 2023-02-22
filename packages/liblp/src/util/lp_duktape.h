@@ -61,4 +61,17 @@ void lpduk_apply_partial(
   int sourceIdx
 );
 
+void lpduk_set_prop_literal(
+  duk_context *duk_ctx,
+  int index,
+  const char *name,
+  const char *value
+);
+
+void lpduk_set_prop_empty_object(
+  duk_context *duk_ctx,
+  int index,
+  const char *name
+);
+
 #endif

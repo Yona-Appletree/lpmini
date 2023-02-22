@@ -203,3 +203,27 @@ void lpduk_apply_partial(
   // Pop the enumerator
   duk_pop(duk_ctx);
 }
+
+
+void lpduk_set_prop_literal(
+  duk_context *duk_ctx,
+  int index,
+  const char *name,
+  const char *value
+) {
+  index = duk_normalize_index(duk_ctx, index);
+
+  duk_push_string(duk_ctx, value);
+  duk_put_prop_string(duk_ctx, index, name);
+}
+
+void lpduk_set_prop_empty_object(
+  duk_context *duk_ctx,
+  int index,
+  const char *name
+) {
+  index = duk_normalize_index(duk_ctx, index);
+
+  duk_push_object(duk_ctx);
+  duk_put_prop_string(duk_ctx, index, name);
+}

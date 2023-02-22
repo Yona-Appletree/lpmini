@@ -6,6 +6,7 @@
 typedef struct {
     duk_context *duk_ctx;
     int frame_id;
+    duk_size_t heap_size;
 } lp_context;
 
 lp_context *lp_context_create(
@@ -17,6 +18,10 @@ int *lp_context_destroy(
 );
 
 int *lp_context_eval(
+  lp_context *lp_ctx
+);
+
+const char *lp_context_to_json(
   lp_context *lp_ctx
 );
 

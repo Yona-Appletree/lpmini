@@ -24,26 +24,32 @@ int lp_scope_create(
 
   // [scope_def]
   // Change the object type to "scope_instance"
-  duk_push_string(duk_ctx, "scope_instance");
-  duk_put_prop_string(duk_ctx, -2, "objType");
+  lpduk_set_prop_literal(duk_ctx, -1, "objType", lp_obj_scope_instance);
   // [scope_def]
 
   // Iterate the nodes and create them
   duk_get_prop_string(duk_ctx, -1, "nodes");
+  int nodesIdx = duk_normalize_index(duk_ctx, -1);
+
   // [scope_instance, nodes]
-  duk_enum(duk_ctx, -1, 0);
+  duk_enum(duk_ctx, nodesIdx, 0);
   // [scope_instance, nodes, enum]
   while (duk_next(duk_ctx, -1, 1)) {
     // [scope_instance, nodes, enum, key, value]
     const char *id = duk_get_string(duk_ctx, -2);
 
+    int nodeDefIdx = duk_normalize_index(duk_ctx, -1);
+
     // Create the node
-    lp_node_create(lp_ctx, id);
+    lp_node_create(lp_ctx, id, nodeDefIdx);
     LP_OBJ_ASSERT_STACK("node_instance")
+    // [scope_instance, nodes, enum, key, node_def, node_instance]
+    duk_swap_top(duk_ctx, -2);
+    duk_pop(duk_ctx);
     // [scope_instance, nodes, enum, key, node_instance]
 
     // Store the node in the object
-    duk_put_prop(duk_ctx, -4);
+    duk_put_prop(duk_ctx, nodesIdx);
     // [scope_instance, nodes, enum]
   }
   // [scope_instance, nodes, enum]

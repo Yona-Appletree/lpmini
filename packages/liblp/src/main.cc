@@ -10,8 +10,17 @@
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "UnusedValue"
 
+void force_gc(lp_context *ctx) {
+  duk_size_t old_size = ctx->heap_size;
+  duk_gc(ctx->duk_ctx, 0);
+  duk_gc(ctx->duk_ctx, 0);
+  duk_size_t new_size = ctx->heap_size;
+
+  printf("gc: %zu -> %zu\n", old_size, new_size);
+}
+
 int main() {
-  auto context = lp_context_create(
+  auto lp_ctx = lp_context_create(
     R"(
 {
   "objType": "context_def",
@@ -20,7 +29,10 @@ int main() {
     "nodes": {
       "node0": {
         "objType": "node_def",
-        "nodeType": "noise"
+        "nodeType": "noise",
+        "input": {
+          "pos": [0.5, 0.2, 0.1]
+        }
       }
     },
     "connections": {},
@@ -31,7 +43,15 @@ int main() {
 )"
   );
 
-  lp_context_eval(context);
+  force_gc(lp_ctx);
+
+  lp_context_eval(lp_ctx);
+
+  force_gc(lp_ctx);
+
+  // print the result
+  printf("%s", lp_context_to_json(lp_ctx));
+
 
   return 0;
 }

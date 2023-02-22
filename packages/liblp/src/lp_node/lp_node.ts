@@ -1,4 +1,6 @@
+import { lp_connection_def } from "../lp_connection/lp_connection";
 import { lp_obj } from "../lp_obj/lp_obj";
+import { PartialDeep } from "../util/PartialDeep";
 
 export type lp_node_type_id = "noise"
 export type lp_node_id = string
@@ -27,7 +29,9 @@ export interface lp_node_def<
   TTypeDef extends lp_node_type_def = lp_node_type_def
 > extends lp_obj<"node_def"> {
   nodeType: TTypeDef["nodeType"],
-  config?: TTypeDef["config"],
+  config?: PartialDeep<TTypeDef["config"]>,
+  input?: PartialDeep<TTypeDef["input"]>,
+  connections?: Record<string, lp_connection_def>
 }
 
 /**

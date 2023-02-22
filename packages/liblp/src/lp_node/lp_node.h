@@ -24,8 +24,7 @@ const lp_node_type_def *lp_node_type_def_by_id(const char *node_type_id);
 /**
  * Create a node from it's definition.
  *
- * Expects the the node scope to be on the top of the stack.
- * Leaves the new node on the top of the stack.
+ * Pushes the new node on the top of the stack.
  *
  * @param ctx
  * @param id
@@ -34,7 +33,8 @@ const lp_node_type_def *lp_node_type_def_by_id(const char *node_type_id);
  */
 int lp_node_create(
   lp_context *lp_ctx,
-  const char *nodeId
+  const char *nodeId,
+  int nodeDefIdx
 );
 
 /**
