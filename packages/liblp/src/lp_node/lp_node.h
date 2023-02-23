@@ -4,6 +4,13 @@
 #include "../duktape/duktape.h"
 #include "../lp_context/lp_context.h"
 
+static const char *lp_node_js_nodeType = "nodeType";
+static const char *lp_node_js_config = "config";
+static const char *lp_node_js_input = "input";
+static const char *lp_node_js_output = "output";
+static const char *lp_node_js_state = "state";
+static const char *lp_node_js_connections = "connections";
+
 typedef int (*lp_node_lifecycle_func)(
   lp_context *lp_ctx,
   int contextIdx,

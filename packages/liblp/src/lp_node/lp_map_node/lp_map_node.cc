@@ -4,7 +4,7 @@
 #include "./lp_map_node.h"
 
 const lp_node_type_def lp_map_node_def = {
-  .node_type_id = "noise",
+  .node_type_id = "map",
   .instance_template_json = R"(
 {
   "objType": "node_instance",

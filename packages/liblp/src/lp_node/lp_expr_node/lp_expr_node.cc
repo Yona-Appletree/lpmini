@@ -4,7 +4,7 @@
 #include "./lp_expr_node.h"
 
 const lp_node_type_def lp_expr_node_def = {
-  .node_type_id = "noise",
+  .node_type_id = "expr",
   .instance_template_json = R"(
 {
   "objType": "node_instance",
@@ -49,9 +49,9 @@ int lp_expr_node_init(
   int outputIdx = duk_normalize_index(duk_ctx, -1);
 
   // Compile as a function, see https://duktape.org/api.html#duk_compile
-  duk_push_string(duk_ctx, "(function(x,y,z){return ");
+  duk_push_string(duk_ctx, "function(x,y,z){return ");
   duk_get_prop_string(duk_ctx, configIdx, "expr");
-  duk_push_string(duk_ctx, ";})");
+  duk_push_string(duk_ctx, "}");
   duk_concat(duk_ctx, 3);
 
   duk_push_string(duk_ctx, "lp_expr_node"); // filename

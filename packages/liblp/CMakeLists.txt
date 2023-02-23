@@ -12,6 +12,8 @@ add_executable(
         src/lp_scope/lp_scope.cc
         src/util/lp_duktape.cc
         src/util/noise.cpp
+        src/duktape/duktape.c
+        src/lp_conn/lp_conn.cc
         src/lp_api.cc
         src/lp_obj/lp_obj.cc
         src/lp_node/lp_node.cc
@@ -19,6 +21,5 @@ add_executable(
         src/lp_node/lp_func_node/lp_func_node.cc
         src/lp_node/lp_map_node/lp_map_node.cc
         src/lp_node/lp_noise_node/lp_noise_node.cc
-        src/duktape/duktape.c
-        src/lp_connection/lp_connection.cc
+        src/lp_node/lp_time_node/lp_time_node.cc
 )

@@ -41,6 +41,10 @@ void *lp_context_realloc(
   void *ptr,
   duk_size_t size
 ) {
+  if (ptr == nullptr) {
+    return lp_context_alloc(lp_ctx, size);
+  }
+
   duk_size_t *actual_ptr = (duk_size_t *) ptr - 1;
   auto old_size = actual_ptr[0];
 
@@ -157,4 +161,32 @@ int lp_context_update(
 
   lp_scope_update(lp_ctx, contextIdx, scopeIdx);
   duk_pop_2(duk_ctx);
+}
+
+void lp_context_eval_js(
+  lp_context *lp_ctx,
+  const char *js
+) {
+  duk_context *duk_ctx = lp_ctx->duk_ctx;
+
+  duk_get_global_string(duk_ctx, "context");
+  int contextIdx = LP_OBJ_ASSERT_STACK(lp_obj_context_instance)
+
+  duk_get_prop_string(duk_ctx, -1, "rootScope");
+  int scopeIdx = LP_OBJ_ASSERT_STACK(lp_obj_scope_instance)
+
+  lp_scope_eval_js(lp_ctx, contextIdx, scopeIdx, js);
+  duk_swap_top(duk_ctx, -3);
+  duk_pop_2(duk_ctx);
+}
+
+double lp_context_eval_js_number(
+  lp_context *lp_ctx,
+  const char *js
+) {
+  lp_context_eval_js(lp_ctx, js);
+  double value = duk_get_number(lp_ctx->duk_ctx, -1);
+  duk_pop(lp_ctx->duk_ctx);
+
+  return value;
 }

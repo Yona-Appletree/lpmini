@@ -5,12 +5,14 @@
 #include "lp_expr_node/lp_expr_node.h"
 #include "lp_map_node/lp_map_node.h"
 #include "lp_func_node/lp_func_node.h"
+#include "lp_time_node/lp_time_node.h"
 
 const lp_node_type_def *lp_node_type_defs[] = {
   &lp_noise_node_def,
   &lp_expr_node_def,
   &lp_map_node_def,
   &lp_func_node_def,
+  &lp_time_node_def,
   nullptr
 };
 
@@ -94,15 +96,26 @@ int lp_node_create(
   // Apply the node definition to the node instance
   lpduk_apply_partial(duk_ctx, 1, nodeInstIdx, nodeDefIdx);
 
+  // Update connection types
+  duk_get_prop_string(duk_ctx, nodeInstIdx, "connections");
+  duk_enum(duk_ctx, -1, DUK_ENUM_OWN_PROPERTIES_ONLY);
+  while (duk_next(duk_ctx, -1, 1)) {
+    lpduk_set_prop_literal(duk_ctx, -1, "objType", lp_obj_connection_instance);
+    duk_pop_2(duk_ctx);
+  }
+  duk_pop_2(duk_ctx);
+
   // Assign values
   lpduk_set_prop_literal(duk_ctx, nodeInstIdx, "objType", lp_obj_node_instance);
   lpduk_set_prop_literal(duk_ctx, nodeInstIdx, "nodeId", nodeId);
 
-  // PRINT_DUK_STACK // [node_instance]
+  // [node_instance]
 
   LP_OBJ_ASSERT_STACK(lp_obj_node_instance)
 
-  node_type_def->init_func(lp_ctx, contextId, scopeIdx, nodeInstIdx);
+  if (node_type_def->init_func != nullptr) {
+    node_type_def->init_func(lp_ctx, contextId, scopeIdx, nodeInstIdx);
+  }
 
   return 0;
 }

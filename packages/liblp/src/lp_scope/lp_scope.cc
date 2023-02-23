@@ -2,7 +2,7 @@
 #include "../lp_node/lp_node.h"
 #include "../lp_obj/lp_obj.h"
 #include "../util/lp_duktape.h"
-#include "../lp_connection/lp_connection.h"
+#include "../lp_conn/lp_conn.h"
 
 #include <unordered_set>
 #include <string>
@@ -86,9 +86,6 @@ int lp_scope_get_node_ids(
   // [scope_instance]
 }
 
-
-static const int scopeEvalIterationLimit = 100;
-
 int lp_scope_eval(
   lp_context *lp_ctx,
   int contextIdx,
@@ -121,46 +118,62 @@ int lp_scope_eval(
   duk_get_prop_string(duk_ctx, -1, "nodes");
   // [scope_instance, nodes]
 
+  int scopeEvalIterationLimit = pendingNodes.size() + 2;
+
   std::unordered_set<std::string> nodeIdsEvaluatedThisIteration;
-  for (int iterationIndex = 0; iterationIndex < scopeEvalIterationLimit; iterationIndex++) {
+  for (int iterationIndex = 0; iterationIndex <= scopeEvalIterationLimit; iterationIndex++) {
+    if (iterationIndex == scopeEvalIterationLimit) {
+      duk_error(duk_ctx, DUK_ERR_ERROR, "Scope evaluation iteration limit of %d reached", scopeEvalIterationLimit);
+    }
+
     nodeIdsEvaluatedThisIteration.clear();
 
     if (pendingNodes.empty()) {
       break;
     }
 
-    for (auto nodeId: pendingNodes) {
-      duk_get_prop_string(duk_ctx, -1, nodeId.c_str());
+    // printf("\nIteration %d:\n", iterationIndex);
+
+    for (auto targetNodeId: pendingNodes) {
+      duk_get_prop_string(duk_ctx, -1, targetNodeId.c_str());
       // [scope_instance, nodes, node_instance]
 
       int nodeIdx = LP_OBJ_ASSERT_STACK(lp_obj_node_instance)
 
       // Iterate the node connections
-      duk_get_prop_string(duk_ctx, nodeIdx, "connections");
+      duk_get_prop_string(duk_ctx, nodeIdx, lp_node_js_connections);
 
       duk_enum(duk_ctx, -1, 0);
 
       bool allDependenciesEvaluated = true;
 
+      // printf("  %s:\n", targetNodeId.c_str());
+
       while (duk_next(duk_ctx, -1, 1)) {
-        int connectionIdx = LP_OBJ_ASSERT_STACK(lp_obj_connection_instance)
+        int connectionIdx = duk_normalize_index(duk_ctx, -1);
 
         // [scope_instance, nodes, node_instance, connections, enum, connection_id, connection]
-        duk_get_prop_string(duk_ctx, -2, "nodeId");
-        const char *nodeId = duk_get_string(duk_ctx, -1);
+        duk_get_prop_string(duk_ctx, connectionIdx, lp_conn_js_sourceNodeId);
+        const char *sourceNodeId = duk_get_string(duk_ctx, -1);
         duk_pop(duk_ctx);
 
-        if (pendingNodes.find(nodeId) != pendingNodes.end()) {
+        // printf("    from %s", sourceNodeId);
+
+        if (sourceNodeId != nullptr && pendingNodes.find(sourceNodeId) != pendingNodes.end()) {
+          // printf(" (pending)\n");
           allDependenciesEvaluated = false;
           duk_pop_2(duk_ctx);
           break;
         } else {
+          // printf(" (available)\n");
+
           // push the node instance
-          lp_connection_apply(
+          // printf("      ");
+          lp_conn_apply(
             lp_ctx,
             scopeIdx,
             nodeIdx,
-            duk_get_top(duk_ctx) - 1
+            connectionIdx
           );
 
           // [scope_instance, nodes, node_instance, connections, enum, connection_id, connection]
@@ -176,7 +189,7 @@ int lp_scope_eval(
         // Evaluate the node
         lp_node_eval(lp_ctx, contextIdx, scopeIdx, nodeIdx);
 
-        nodeIdsEvaluatedThisIteration.insert(nodeId);
+        nodeIdsEvaluatedThisIteration.insert(targetNodeId);
       }
 
       duk_pop(duk_ctx);
@@ -188,6 +201,11 @@ int lp_scope_eval(
         DUK_ERR_TYPE_ERROR,
         "No new nodes were evaluated in scope eval iteration. This is likely due to a circular dependency."
       );
+    } else {
+      // Remove them from the pending set
+      for (auto it: nodeIdsEvaluatedThisIteration) {
+        pendingNodes.erase(it);
+      }
     }
   }
 
@@ -195,7 +213,6 @@ int lp_scope_eval(
 
   return 0;
 }
-
 
 int lp_scope_update(
   lp_context *lp_ctx,
@@ -215,6 +232,44 @@ int lp_scope_update(
     duk_pop_2(duk_ctx);
   }
   duk_pop_2(duk_ctx);
+
+  return 0;
+}
+
+int lp_scope_eval_js(
+  lp_context *lp_ctx,
+  int contextIdx,
+  int scopeIdx,
+  const char *js
+) {
+  duk_context *duk_ctx = lp_ctx->duk_ctx;
+
+  duk_push_string(duk_ctx, "function(");
+  int paramCount = 0;
+  for (auto name = lp_scope_js; *name != nullptr; name++, paramCount++) {
+    duk_push_string(duk_ctx, *name);
+    if (*(name + 1) == nullptr) {
+      duk_push_string(duk_ctx, "");
+    } else {
+      duk_push_string(duk_ctx, ",");
+    }
+  }
+  duk_push_string(duk_ctx, "){return ");
+  duk_push_string(duk_ctx, js);
+  duk_push_string(duk_ctx, "}");
+  duk_concat(duk_ctx, 4 + paramCount * 2);
+
+  // "Filename"
+  duk_push_string(duk_ctx, "lp_scope_eval_js: ");
+  duk_push_string(duk_ctx, js);
+  duk_concat(duk_ctx, 2);
+
+  duk_compile(duk_ctx, DUK_COMPILE_FUNCTION | DUK_COMPILE_STRICT);
+  for (auto name = lp_scope_js; *name != nullptr; name++) {
+    duk_get_prop_string(duk_ctx, scopeIdx, *name);
+  }
+
+  duk_call(lp_ctx->duk_ctx, paramCount);
 
   return 0;
 }

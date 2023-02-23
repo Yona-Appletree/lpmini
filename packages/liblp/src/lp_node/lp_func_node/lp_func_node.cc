@@ -5,7 +5,7 @@
 #include "./lp_func_node.h"
 
 const lp_node_type_def lp_func_node_def = {
-  .node_type_id = "noise",
+  .node_type_id = "func",
   .instance_template_json = R"(
 {
   "objType": "node_instance",

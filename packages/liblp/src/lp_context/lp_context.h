@@ -29,4 +29,14 @@ const char *lp_context_to_json(
   lp_context *lp_ctx
 );
 
+void lp_context_eval_js(
+  lp_context *lp_ctx,
+  const char *js
+);
+
+double lp_context_eval_js_number(
+  lp_context *lp_ctx,
+  const char *js
+);
+
 #endif

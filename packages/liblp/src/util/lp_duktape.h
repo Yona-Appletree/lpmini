@@ -101,7 +101,20 @@ void lpduk_get_path(
 void lpduk_set_path(
   duk_context *duk_ctx,
   int rootIdx,
+  int firstPropIndex,
   int pathArrayIdx,
+  int valueIdx
+);
+
+/**
+ * Converts a Duktape value on the stack to a JSON string, leaving it on the top of the stack.
+ *
+ * @param duk_ctx
+ * @param valueIdx Index of the value on the stack to convert
+ * @return Normalized index of the JSON string on the stack
+ */
+int lpduk_to_json(
+  duk_context *duk_ctx,
   int valueIdx
 );
 

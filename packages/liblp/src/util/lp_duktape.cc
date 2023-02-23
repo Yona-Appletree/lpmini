@@ -11,7 +11,7 @@ void lpduk_print_stack(
 ) {
   //duk_push_context_dump(duk_ctx);
 
-  int max_items = 10;
+  int max_items = 20;
 
   // Print a nice stack trace
   printf("%s:%02d: %s: -1:", file, line, message);
@@ -250,29 +250,38 @@ void lpduk_get_path(
   duk_dup(duk_ctx, rootIdx);
   int resultIdx = duk_normalize_index(duk_ctx, -1);
 
-  duk_enum(duk_ctx, pathArrayIdx, 0);
-  while (duk_next(duk_ctx, -1, 1)) {
+  duk_size_t length = duk_get_length(duk_ctx, pathArrayIdx);
+  for (duk_size_t i = 0; i < length; i++) {
+    duk_get_prop_index(duk_ctx, pathArrayIdx, i);
     duk_get_prop(duk_ctx, resultIdx);
     duk_swap_top(duk_ctx, resultIdx);
-    duk_pop_2(duk_ctx);
+    duk_pop(duk_ctx);
   }
-  duk_pop(duk_ctx);
 }
 
 void lpduk_set_path(
   duk_context *duk_ctx,
   int rootIdx,
+  int firstPropIndex,
   int pathArrayIdx,
   int valueIdx
 ) {
   // Push the root on the top of the stack
   duk_dup(duk_ctx, rootIdx);
   int tempIdx = duk_normalize_index(duk_ctx, -1);
-
+  
   auto length = duk_get_length(duk_ctx, pathArrayIdx);
-  for (int i = 0; i < length; i++) {
-    duk_get_prop_index(duk_ctx, pathArrayIdx, i);
-    if (i == length - 1) {
+  for (int i = 0; i <= length; i++) {
+    if (i == 0) {
+      duk_dup(duk_ctx, firstPropIndex);
+      duk_get_prop(duk_ctx, tempIdx);
+      duk_swap_top(duk_ctx, tempIdx);
+      continue;
+    } else {
+      duk_get_prop_index(duk_ctx, pathArrayIdx, i - 1);
+    }
+
+    if (i == length) {
       duk_dup(duk_ctx, valueIdx);
       duk_put_prop(duk_ctx, tempIdx);
     } else {
@@ -281,4 +290,14 @@ void lpduk_set_path(
       duk_pop(duk_ctx);
     }
   }
+}
+
+
+int lpduk_to_json(
+  duk_context *duk_ctx,
+  int valueIdx
+) {
+  duk_dup(duk_ctx, valueIdx);
+  duk_json_encode(duk_ctx, -1);
+  return duk_normalize_index(duk_ctx, -1);
 }

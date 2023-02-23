@@ -6,7 +6,7 @@
 #include<sys/time.h>
 
 const lp_node_type_def lp_time_node_def = {
-  .node_type_id = "noise",
+  .node_type_id = "time",
   .instance_template_json = R"(
 {
   "objType": "node_instance",
