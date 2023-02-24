@@ -60,8 +60,7 @@ int lp_scope_create(
   return 0;
 }
 
-
-int lp_scope_get_node_ids(
+void lp_scope_get_node_ids(
   lp_context *lp_ctx,
   std::unordered_set<std::string> &nodeIds
 ) {

@@ -13,22 +13,33 @@ lp_context *lp_context_create(
   const char *lp_context_def_json
 );
 
-int lp_context_update(
+void lp_context_update(
   lp_context *lp_ctx
 );
 
-int *lp_context_destroy(
+void lp_context_destroy(
   lp_context *lp_ctx
 );
 
-int *lp_context_eval(
+void lp_context_eval(
   lp_context *lp_ctx
 );
 
-const char *lp_context_to_json(
+/**
+ * Converts the context to JSON, leaves it on the stack.
+ *
+ * @param lp_ctx
+ */
+void lp_context_to_json(
   lp_context *lp_ctx
 );
 
+/**
+ * Evaluates a javascript expression in the context of the root scope, leaves the result on the stack.
+ *
+ * @param lp_ctx
+ * @param js
+ */
 void lp_context_eval_js(
   lp_context *lp_ctx,
   const char *js
@@ -38,5 +49,6 @@ double lp_context_eval_js_number(
   lp_context *lp_ctx,
   const char *js
 );
+
 
 #endif

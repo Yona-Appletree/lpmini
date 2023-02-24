@@ -269,7 +269,7 @@ void lpduk_set_path(
   // Push the root on the top of the stack
   duk_dup(duk_ctx, rootIdx);
   int tempIdx = duk_normalize_index(duk_ctx, -1);
-  
+
   auto length = duk_get_length(duk_ctx, pathArrayIdx);
   for (int i = 0; i <= length; i++) {
     if (i == 0) {
@@ -300,4 +300,10 @@ int lpduk_to_json(
   duk_dup(duk_ctx, valueIdx);
   duk_json_encode(duk_ctx, -1);
   return duk_normalize_index(duk_ctx, -1);
+}
+
+const char *lpduk_pop_string(duk_context *duk_ctx) {
+  const char *str = duk_get_string(duk_ctx, -1);
+  duk_pop(duk_ctx);
+  return str;
 }

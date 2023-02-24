@@ -36,7 +36,7 @@ export const commonConfig: webpack.Configuration = {
         exclude: /node_modules/,
       },
       {
-        // This must match the wasm binary created in compile.sh
+        // This must match the wasm binary created in build-emscripten.sh
         test: /liblp\.js$/,
         loader: `exports-loader`,
         options: {
@@ -47,7 +47,7 @@ export const commonConfig: webpack.Configuration = {
       // wasm files should not be processed but just be emitted and we want
       // to have their public URL.
       {
-        test: /lp_api\.wasm$/,
+        test: /liblp\.wasm$/,
         type: `javascript/auto`,
         loader: `file-loader`,
         // options: {

@@ -1,7 +1,7 @@
 #include "util/noise.h"
 
 #include "util/lp_duktape.h"
-#include "lp_api.h"
+#include "liblp.h"
 
 #include "lp_context/lp_context.h"
 
@@ -15,6 +15,8 @@
 // test_lp_conn_apply
 
 void test_lp_conn_apply() {
+  printf("Running test_lp_conn_apply...\n");
+
   auto lp_ctx = lp_context_create(
     R"(
 {
@@ -76,6 +78,8 @@ void test_lp_conn_apply() {
 // test_lpduk_get_path
 
 void test_lpduk_get_path() {
+  printf("Running test_lpduk_get_path...\n");
+
   duk_context *duk_ctx = duk_create_heap_default();
   duk_eval_string(duk_ctx, "({value:10, child: { cval: 20, cchild: { cval: 30 } }, other:20, ary:[1,2,3] })");
   int targetIdx = duk_normalize_index(duk_ctx, -1);
@@ -109,6 +113,8 @@ void test_lpduk_get_path() {
 // test_lpduk_set_path
 
 void test_lpduk_set_path() {
+  printf("Running test_lpduk_set_path...\n");
+
   duk_context *duk_ctx = duk_create_heap_default();
   duk_eval_string(duk_ctx,
                   "x=({value:10, child: { cval: 20, cchild: { cval: 30 } }, other:20, ary:[1,2,3] }),y={foo:x}");
@@ -135,6 +141,8 @@ void test_lpduk_set_path() {
 // test_partial_apply
 
 void test_partial_apply() {
+  printf("Running test_partial_apply...\n");
+
   duk_context *duk_ctx = duk_create_heap_default();
   duk_eval_string(duk_ctx, "({value:10, child: { cval: 20, cchild: { cval: 30 } }, other:20, ary:[1,2,3] })");
   int targetIdx = duk_normalize_index(duk_ctx, -1);
@@ -164,6 +172,8 @@ void force_gc(lp_context *ctx) {
 }
 
 void test_simple_context() {
+  printf("Running test_simple_context...\n");
+
   auto lp_ctx = lp_context_create(
     R"(
 {
@@ -194,14 +204,17 @@ void test_simple_context() {
   force_gc(lp_ctx);
 
   // print the result
-  printf("%s", lp_context_to_json(lp_ctx));
+  lp_context_to_json(lp_ctx);
+  printf("%s", lpduk_pop_string(lp_ctx->duk_ctx));
+
+  lp_context_destroy(lp_ctx);
 }
 
 
 int main() {
   test_lpduk_get_path();
-//  test_lpduk_set_path();
-//  test_simple_context();
+  test_lpduk_set_path();
+  test_simple_context();
   test_lp_conn_apply();
 
   return 0;

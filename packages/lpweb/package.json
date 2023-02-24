@@ -1,5 +1,5 @@
 {
-  "name": "@emscripten-cplusplus-webpack-example/example-web",
+  "name": "@lpmini/lpweb",
   "version": "1.0.0",
   "main": "index.js",
   "repository": "https://github.com/9oelM/emscripten-cplusplus-webpack-example.git",
@@ -53,7 +53,7 @@
     "webpack-dev-server": "4.7.2"
   },
   "dependencies": {
-    "@emscripten-cplusplus-webpack-example/example-wasm": "*",
+    "@lpmini/liblp": "*",
     "axios": "^0.24.0",
     "lodash.flow": "^3.5.0",
     "react": "^17.0.2",

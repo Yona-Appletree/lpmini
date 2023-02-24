@@ -112,16 +112,15 @@ lp_context *lp_context_create(
   return lp_ctx;
 }
 
-int *lp_context_destroy(
+void lp_context_destroy(
   lp_context *lp_ctx
 ) {
   auto duk_ctx = lp_ctx->duk_ctx;
   duk_destroy_heap(duk_ctx);
   delete lp_ctx;
-  return 0;
 }
 
-int *lp_context_eval(
+void lp_context_eval(
   lp_context *lp_ctx
 ) {
   duk_context *duk_ctx = lp_ctx->duk_ctx;
@@ -136,19 +135,16 @@ int *lp_context_eval(
   duk_pop_2(duk_ctx);
 }
 
-const char *lp_context_to_json(
+void lp_context_to_json(
   lp_context *lp_ctx
 ) {
   duk_context *duk_ctx = lp_ctx->duk_ctx;
   duk_get_global_string(duk_ctx, "context");
   int contextIdx = LP_OBJ_ASSERT_STACK(lp_obj_context_instance);
   duk_json_encode(duk_ctx, contextIdx);
-  const char *json = duk_get_string(duk_ctx, -1);
-  duk_pop(duk_ctx);
-  return json;
 }
 
-int lp_context_update(
+void lp_context_update(
   lp_context *lp_ctx
 ) {
   duk_context *duk_ctx = lp_ctx->duk_ctx;

@@ -1,5 +1,5 @@
 {
-  "name": "@emscripten-cplusplus-webpack-example/example-wasm",
+  "name": "@lpmini/liblp",
   "version": "1.0.0",
   "description": "",
   "repository": {
@@ -8,7 +8,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "watch": "nodemon -e 'cc,cpp,h,sh' --watch . --exec './compile.sh'"
+    "clean": "rm -rf ./build",
+    "build": "./build-wrapper.sh",
+    "build:watch": "nodemon -e 'cc,cpp,h,sh' --watch . --exec './build-wrapper.sh'"
   },
   "keywords": [
     "emscripten",

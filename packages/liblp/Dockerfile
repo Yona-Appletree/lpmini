@@ -1,9 +1,7 @@
 FROM emscripten/emsdk:latest
 
-WORKDIR /etc/example-wasm
+WORKDIR /etc/build
 
 RUN ls -la
 
 RUN which em++
-
-ENTRYPOINT ["./compile.sh"]

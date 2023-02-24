@@ -20,6 +20,8 @@
   } \
 
 
+const char *lpduk_pop_string(duk_context *duk_ctx);
+
 void lpduk_print_stack(
   const char *file,
   int line,

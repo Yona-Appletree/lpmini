@@ -1,96 +1,67 @@
-import { lp_api, lp_api_context, lp_api_promise } from "./lp_api";
-import { lp_node_def, lp_node_id, lp_node_instance } from "./lp_node/lp_node";
+import { lp_context_def } from "src/lp_context/lp_context";
+import { lp_scope_instance } from "src/lp_scope/lp_scope";
+import { liblp, liblp_context_ptr, liblp_promise } from "./liblp";
+import { lp_node_id, lp_node_instance } from "./lp_node/lp_node";
 import { applyDeepPartial, PartialDeep } from "./util/PartialDeep";
 
-export default class LpContext<TInput extends object, TOutput extends object> {
+export default class LpContext<TContextDef extends lp_context_def> {
   private nodeCount = 0;
 
-  static async create<TInput extends object, TOutput extends object>(
-    input: TInput,
-    output: TOutput
+  static async create<TContextDef extends lp_context_def>(
+    definition: TContextDef
   ) {
-    const api = await lp_api_promise;
+    const api = await liblp_promise;
 
     return new LpContext(
       api,
-      api.lp_api_context_create(
-        JSON.stringify(input),
-        JSON.stringify(output),
+      api.liblp_context_create(
+        JSON.stringify(definition)
       )
     )
   }
 
   private constructor(
-    public api: lp_api,
-    public contextPtr: lp_api_context
+    public api: liblp,
+    public contextPtr: liblp_context_ptr
   ) {
   }
 
   destroy() {
-    this.api.lp_api_context_destroy(this.contextPtr);
+    this.api.liblp_context_destroy(this.contextPtr);
   }
 
-  addNode<T extends lp_node_def>(
-    nodeType: T["type"],
-    nodeId: lp_node_id = "node" + this.nodeCount++
-  ): LpNode<T> {
-    this.api.lp_api_add_node(
-      this.contextPtr,
-      nodeType,
-      nodeId
-    );
-
-    return new LpNode<T>(
-      this,
-      nodeId
-    );
+  tick() {
+    this.api.liblp_context_tick(this.contextPtr);
   }
+}
 
-  get input() {
-    return JSON.parse(this.api.lp_api_eval_expr(
-      this.contextPtr,
-      `input`
-    )) as TInput;
-  }
+export class LpScope<TScopeDef extends lp_scope_instance> {
 
-  set input(input: TInput) {
-    this.api.lp_api_eval_expr(
-      this.contextPtr,
-      "input=" + JSON.stringify(input)
-    );
-  }
-
-  get output() {
-    return JSON.parse(this.api.lp_api_eval_expr(
-      this.contextPtr,
-      "output"
-    )) as TOutput;
-  }
 }
 
 export class LpNode<TNodeDef extends lp_node_instance> {
   constructor(
-    public lpContext: LpContext<any, any>,
+    public lpContext: LpContext<any>,
     private nodeId: lp_node_id
   ) {
   }
 
   get state() {
-    return JSON.parse(this.lpContext.api.lp_api_eval_expr(
+    return JSON.parse(this.lpContext.api.liblp_eval_expr_to_json(
       this.lpContext.contextPtr,
       `nodes.${this.nodeId}`
     )) as TNodeDef;
   }
 
   get input() {
-    return JSON.parse(this.lpContext.api.lp_api_eval_expr(
+    return JSON.parse(this.lpContext.api.liblp_eval_expr_to_json(
       this.lpContext.contextPtr,
       `nodes.${this.nodeId}.input`
     ));
   }
 
   set input(input: TNodeDef["input"]) {
-    this.lpContext.api.lp_api_eval_expr(
+    this.lpContext.api.liblp_eval_expr_to_json(
       this.lpContext.contextPtr,
       `nodes.${this.nodeId}.input=` + JSON.stringify(input)
     );
@@ -103,16 +74,16 @@ export class LpNode<TNodeDef extends lp_node_instance> {
     );
   }
 
-  evaluate(
-    inputUpdates: PartialDeep<TNodeDef["input"]>
-  ): TNodeDef["output"] {
-    this.applyInput(inputUpdates);
-
-    this.lpContext.api.lp_api_eval_node(
-      this.lpContext.contextPtr,
-      this.nodeId
-    );
-
-    return this.state.output;
-  }
+  // evaluate(
+  //   inputUpdates: PartialDeep<TNodeDef["input"]>
+  // ): TNodeDef["output"] {
+  //   this.applyInput(inputUpdates);
+  //
+  //   this.lpContext.api.liblp_eval_node(
+  //     this.lpContext.contextPtr,
+  //     this.nodeId
+  //   );
+  //
+  //   return this.state.output;
+  // }
 }

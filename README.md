@@ -1,325 +1,67 @@
-# emscripten-cplusplus-webpack-example
+# lightplayer-mini
 
-# Demo
+An application for controlling smart LEDs in interesting ways from an ESP32
+configured with a web-based node style programming environment similar to NodeRED.
 
-https://9oelm.github.io/emscripten-cplusplus-webpack-example/
+## Development
 
-## More practical demo
+Ensure you have `pnpm` and `docker-compose` installed.
 
-https://riscv.vercel.app: this project uses this repository as a template to complile more complicated set of cpp files
-into wasm, and then run it on the web.
+- run `pnpm install` to install dependencies
+- `cd packages/liblp && pnpm run dev` to build the wasm module
+- `cd packages/lpweb && pnpm run build:watch` to start the development server
+
+# Design
 
 ## Rationale
 
-Ok. Why this repo? *
-*_Using Emscripten on C++ to use WASM binary with Webpack + Typescript + React will NOT just work and things about this
-are very poorly documented sparsely across the web._**
+I wanted a simple and visual way to build LED visualizations and animations
+run from cheap widely available microcontrollers.
 
-So I decided to go through this rabbit hole and find out the solution, and I did.
+None of the available solutions, such as WLED, or Pixelblaze, met my needs
+for a simple and visual way to program the animations.
 
-This is a step-by-step hands-on guide on:
+## Goals
 
-1. Compiling C++ code (two .cc's and two .h's) into a single Webassembly binary using Emscripten in Docker
-2. Feeding the resultant .wasm into Webpack + Typescript + React project under npm workspaces (monorepo) setup
-3. Seeing the thing working, being happy by then, and going back to work
+- Ability to run on an ESP32 and control WS2811-protocol LEDs
+- Simple and visual programming environment inspired by NodeRED and TouchDesigner
+- Rich visual debugging capabilities for animations
+- Ability to build custom UIs for controlling animations, suitable for use by non-technical users
+- Support for hardware input, such as accelerometers, microphones, and buttons
+- Performance to run animation consisting of 50 nodes at 30fps on 150 LEDs
+- Support for interpolation, if needed, to compensate for poor frame rate
 
-Now, I will just write in order what needs to be exactly done. PRs welcome.
+## Non Goals
 
-## Init project
+- Support for LED protocols other than WS2811
+- Support for other microcontrollers
+- General purpose programming environment
+- Integration with home automation or similar
 
-I assume you already have installed / know `nvm`, so no explanation on this one.
+## Architecture
 
-Run from project root:
+lightplayer-mini is built from three parts:
 
-```bash
-nvm use # use appropriate node & npm version as specified by .nvmrc
+- liblp: A C++ library implementing the node-based-programming kernel
+- weblp: A web application that uses a WebAssembly build of liblp to provide
+  the visual programming environment, debugger, and custom UIs.
+- embeddedlp: An ESP32 firmware that runs liblp on a microcontroller to drive the LEDs,
+  and a webserver to host the web application.
 
-npm i # install deps for all packages, and link packages from each other under the monorepo setup
-```
+### liblp
 
-## Compile C++ to .wasm (everything done inside `packages/example-wasm`)
+liblp a node-programming interpreter built on top of the duktape embedded javascript interpreter.
+Duktape provides memory management, stack management, and garbage collection, and utilities for
+easy integration with the javascript host.
 
-First, you will need to build the dockerfile. You can use your own `em++` locally, but I personally find it the simplest
-to use docker container instead.
+Using a javascript interpreter is a logical choice, since the web application is written in javascript.
+It also allows easy prototyping of new nodes in javascript. They can be rewritten in C++ for performance
+if needed.
 
-```bash
-$ cd packages/liblp 
+### weblp
 
-$ ls
-add.cc            dockerutil.sh     lp_api.wasm          package-lock.json
-add.h             lp_api.cc            lp_api.d.ts        package.json
-compile.sh        lp_api.h             lp_api.ts          tsconfig.json
-dockerfile        lp_api.ts            node_modules
-
-$ chmod u+x compile.sh dockerutil.sh # grant shell scripts permission
-
-$ ./dockerutil.sh -c build # download & build docker image
-[+] Building 0.8s (8/8) FINISHED                                             
- => [internal] load build definition from Dockerfile                    0.0s
- => => transferring dockerfile: 154B                                    0.0s
- => [internal] load .dockerignore                                       0.0s
- => => transferring context: 2B                                         0.0s
- => [internal] load metadata for docker.io/emscripten/emsdk:latest      0.0s
- => CACHED [1/4] FROM docker.io/emscripten/emsdk:latest                 0.0s
- => [2/4] WORKDIR /etc/liblp                                     0.0s
- => [3/4] RUN ls -la                                                    0.3s
- => [4/4] RUN which em++                                                0.3s
- => exporting to image                                                  0.0s
- => => exporting layers                                                 0.0s
- => => writing image sha256:c4243b91ba65d543b6ace91d2ca6faf0bed700196f  0.0s
- => => naming to docker.io/library/liblp                         0.0s
-
-Use 'docker scan' to run Snyk tests against images to find vulnerabilities and learn how to fix them
-```
-
-Then, review the code in `compile.sh` (important stuffs are written as comments in this file, so no alternative
-elaboration here):
-
-```bash
-#!/bin/bash
-
-# EXPORST_NAME means we can import from lp_api.ts as follows:
-# import { lp_api } from './lp_api.ts'
-# and lp_api will contain the module with webassembly
-
-# EXPORTED_FUNCTIONS is the list of functions
-# exported from C. Make sure you put them into extern "C" {} block in your c++ code. 
-# Then simply prefix the functions you are going to export with an underscore, and add it to the list below
-
-# uncomment "FILESYSTEM=0" if you don't need to use fs (i.e. use it on web entirely)
-
-# if you create more dependencies of lp_api.cc, simply add them to the end of the below command, like: -o ./lp_api.ts lp_api.cc add.cc anotherdep.cc and_so_on.cc
-em++ -O3 -s WASM=1 -s EXPORTED_RUNTIME_METHODS='[\"cwrap\"]' -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s 'EXPORT_NAME="lp_api"' -s 'EXPORTED_FUNCTIONS=["_fib"]' -s "ENVIRONMENT='web'" -o ./lp_api.ts lp_api.cc add.cc
-    # -s "FILESYSTEM=0"
-```
-
-Now, compile the C++ code using Emscripten in Docker:
-
-```
-$ ./dockerutil.sh -c run
-```
-
-Then, you must be able to see `lp_api.ts` and `lp_api.wasm` in the same directory.
-
-## Glue code
-
-If you are looking at this repo, you probably struggled to integrate the output from the previous step into webpack
-configurations. As pointed out by @surma, you need some additional setup. And the things @surma pointed out in the past
-also have changed over time... so there needs to be some kind of glue code anyways. That
-is `packages/example-wasm/lp_api.ts`:
-
-```js
-import {lp_api} from "./lp_api.ts"
-import fibonacciModule from "./lp_api.wasm"
-
-// Since webpack will change the name and potentially the path of the
-// `.wasm` file, we have to provide a `locateFile()` hook to redirect
-// to the appropriate URL.
-// More details: https://kripken.github.io/emscripten-site/docs/api_reference/module.html
-const wasm = lp_api({
-    locateFile(path) {
-        if (path.endsWith(`.wasm`)) {
-            return fibonacciModule
-        }
-        return path
-    },
-})
-
-export default wasm
-```
-
-And here's the node_type_id definition (Emscripten does not create one for you, so I created it myself, and you will
-need to too
-if you want):
-
-```ts
-/* eslint-disable */
-export interface FibWasm {
-  _fib(a: number): number;
-}
-
-export declare const FibWasmPromise: Promise<FibWasm>;
-
-export default FibWasmPromise
-```
-
-So.. judging from above code, you can simply do something like:
-
-```js
-import FibWasmPromise from './lp_api.ts'
-
-...
-somewhere in the
-code
-...
-
-async function loadAndrunWasm() {
-    const fibWasm = await FibWasmPromise
-
-    fibWasm._fib(5)
-}
-```
-
-Right. But to be able to do this, we need some more work from Webpack side.
-
-## Webpack configuration (everything done inside `packages/example-web`)
-
-Now, webpack natively supports importing wasm, but the problem is that the kind of wasm it supports is NOT the kind
-produced by emscripten. So what do we do?
-
-We put this in `module.rules` in webpack config:
-
-```js
-      {
-    test: /lp_api\.js$/,
-        loader
-:
-    `exports-loader`,
-        options
-:
-    {
-        node_type_id: `module`,
-            // this MUST be equivalent to EXPORT_NAME in packages/liblp/complile.sh
-            exports
-    :
-        `lp_api`,
-    }
-,
-}
-,
-// wasm files should not be processed but just be emitted and we want
-// to have their public URL.
-{
-    test: /lp_api\.wasm$/,
-        node_type_id
-:
-    `javascript/auto`,
-        loader
-:
-    `file-loader`,
-    // options: {
-    // if you add this, wasm request path will be https://domain.com/publicpath/[hash].wasm
-    //   publicPath: `static/`,
-    // },
-}
-,
-```
-
-You need to use exports-loader because it seems that `lp_api.ts` (output from `em++`) does not export `lp_api` for
-whatever reason. You will get this error if you comment out `exports-loader` part:
-
-![doc1.png](./doc1.png)
-
-Now, I mentioned that Webpack supports importing wasm out of the box, and that makes this thing not work. So we are just
-going to tell Webpack to import wasm without any processing. That is what `file-loader` is doing below `exports-loader`.
-
-After you launch webpack dev server, you will be able to see your wasm being requested
-as `https://localhost:8080/[hash].wasm`.
-
-And don't forget to include `@emscripten-cplusplus-webpack-example/example-wasm` as a dependency
-in `packages/example-web/package.json` (it is already there, but you will need to do it yourself for your project)
-
-```
-"dependencies": {
-    "axios": "^0.24.0",
-    "lodash.flow": "^3.5.0",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "@emscripten-cplusplus-webpack-example/example-wasm": "*"
-  }
-```
-
-## `import` it and rock
-
-Now, just import it, `await` the promise and use it. Ah, and if you are curious about Pure and Impure parts, it's
-another huge topic... to be explained for effective React. I won't explain it here. Just look at how wasm gets imported
-and used.
-
-```ts
-import React, { useEffect, useState } from "react"
-import { FC } from "react"
-import { enhance } from "../../utilities/essentials"
-import { ExampleFallback } from "./fallback"
-import fibWasmPromise from "@emscripten-cplusplus-webpack-example/liblp"
-
-// eslint-disable-next-line @typescript-eslint/ban-types
-export
-node_type_id
-ExampleImpureProps = {}
-
-export const ExampleImpure: FC<ExampleImpureProps> =
-  enhance<ExampleImpureProps>(() => {
-    const [ fibResult, setFibResult ] = useState<null | number>(null)
-
-    useEffect(
-      () => {
-        async function loadAndRunFibWasm() {
-          const fibWasm = await fibWasmPromise
-          setFibResult(fibWasm._fib(20))
-        }
-
-        loadAndRunFibWasm()
-      },
-      []
-    )
-
-    return (
-      <ExamplePure
-        {
-          ...{
-            fibResult,
-          }
-        }
-    />
-  )
-  })(
-    ExampleFallback)
-
-// eslint-disable-next-line @typescript-eslint/ban-types
-export
-node_type_id
-ExamplePureProps = {
-  fibResult: number | null
-}
-
-export const ExamplePure: FC<ExamplePureProps> = enhance<ExamplePureProps>(
-  ({ fibResult }) => (
-    <div>
-      {(() => {
-        switch (fibResult) {
-          case null: {
-            return <p>lp_api(20)
-          :
-            loading < /p>
-          }
-          default: {
-            return <p>lp_api(20)
-          :
-            {
-              fibResult
-            }
-            </p>
-          }
-        }
-      })()
-}
-</div>
-)
-)
-(ExampleFallback)
-```
-
-Then.. IT WORKS!!
-
-![doc0.png](./doc0.png)
+A React applications implementing the UI.
 
 ## References
 
-- https://github.com/PetterS/clang-wasm
-- https://towardsdev.com/lets-export-the-c-library-to-javascript-wasm-library-part-a-4b99c9a7cf2
-- https://emscripten.org/docs/porting/files/file_systems_overview.html#file-system-overview
-- https://github.com/webpack/webpack/issues/7352
-- https://gist.github.com/surma/b2705b6cca29357ebea1c9e6e15684cc
-- https://developer.mozilla.org/en-US/docs/WebAssembly/existing_C_to_wasm
-- https://github.com/emscripten-core/emscripten/issues/10224
-- https://stackoverflow.com/questions/8249945/what-is-object-in-object-file-and-why-is-it-called-this-way
+- Based on https://github.com/9oelM/emscripten-cplusplus-webpack-example
