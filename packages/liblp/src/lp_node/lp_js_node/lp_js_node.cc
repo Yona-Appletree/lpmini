@@ -123,6 +123,7 @@ int lp_js_node_update(
 
   duk_get_prop_string(duk_ctx, nodeIdx, "state");
   int stateIdx = duk_normalize_index(duk_ctx, -1);
+  // [..., state]
 
   // Call the update function
   duk_get_prop_string(duk_ctx, stateIdx, "updateFn");
@@ -132,7 +133,8 @@ int lp_js_node_update(
     duk_call(duk_ctx, 1);
   }
 
-  duk_pop(duk_ctx);
+  // [..., state, null | updateFnResult]
+  duk_pop_2(duk_ctx);
 
   LP_END_FUNC(0)
 }
@@ -148,6 +150,7 @@ int lp_js_node_eval(
 
   duk_get_prop_string(duk_ctx, nodeIdx, "state");
   int stateIdx = duk_normalize_index(duk_ctx, -1);
+  // [..., state]
 
   // Call the eval function
   duk_get_prop_string(duk_ctx, stateIdx, "evalFn");
@@ -157,8 +160,13 @@ int lp_js_node_eval(
     duk_call(duk_ctx, 2);
     duk_put_prop_string(duk_ctx, nodeIdx, "output");
   } else {
+    // [..., state, null]
     duk_pop(duk_ctx);
   }
+
+  // [..., state]
+
+  duk_pop(duk_ctx);
 
   LP_END_FUNC(0)
 }
@@ -174,6 +182,7 @@ int lp_js_node_destroy(
 
   duk_get_prop_string(duk_ctx, nodeIdx, "state");
   int stateIdx = duk_normalize_index(duk_ctx, -1);
+  // [..., state]
 
   // Call the destroy function
   duk_get_prop_string(duk_ctx, stateIdx, "destroyFn");
@@ -182,7 +191,9 @@ int lp_js_node_destroy(
     duk_call(duk_ctx, 1);
   }
 
-  duk_pop(duk_ctx);
+  // [..., state, null | destroyFnResult]
+
+  duk_pop_2(duk_ctx);
 
   LP_END_FUNC(0)
 }

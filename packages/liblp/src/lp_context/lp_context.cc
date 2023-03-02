@@ -16,9 +16,11 @@ static void lp_context_fatal_error_handler(
   void *udata,
   const char *msg
 ) {
-  (void) udata;  /* ignored in this case, silence warning */
+  lp_context *lp_ctx = (lp_context *) udata;
+  duk_context *duk_ctx = lp_ctx->duk_ctx;
 
   /* Note that 'msg' may be NULL. */
+  PRINT_DUK_STACK;
   fprintf(stderr, "*** FATAL ERROR: %s\n", (msg ? msg : "no message"));
   fflush(stderr);
   abort();
@@ -80,7 +82,7 @@ lp_context *lp_context_create(
     nullptr, //lp_context_alloc,
     nullptr, //lp_context_realloc,
     nullptr, //lp_context_free,
-    nullptr, //lp_ctx,
+    lp_ctx,
     lp_context_fatal_error_handler
   );
   lp_ctx->frame_counter = 0;

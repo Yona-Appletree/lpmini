@@ -133,7 +133,7 @@ void test_lpduk_set_path() {
     duk_normalize_index(duk_ctx, -1)
   );
   duk_eval_string(duk_ctx, "x.child.cval");
-  printf("result: %f\n", duk_get_number(duk_ctx, -1));
+  //printf("result: %f\n", duk_get_number(duk_ctx, -1));
   assert(duk_get_number(duk_ctx, -1) == 1000);
 }
 
@@ -154,7 +154,7 @@ void test_partial_apply() {
 
   duk_dup(duk_ctx, targetIdx);
   duk_json_encode(duk_ctx, -1);
-  printf("result: %s\n", duk_get_string(duk_ctx, -1));
+  //printf("result: %s\n", duk_get_string(duk_ctx, -1));
 }
 
 // =====================================================================================================================
@@ -195,16 +195,9 @@ void test_simple_context() {
 )"
   );
 
-  force_gc(lp_ctx);
-
   lp_context_eval(lp_ctx);
-
-  force_gc(lp_ctx);
-
-  // print the result
-  lp_context_to_json(lp_ctx);
-  printf("%s\n", lpduk_pop_string(lp_ctx->duk_ctx));
-
+  assert(lp_context_eval_js_number(lp_ctx, "nodes.node0.output") == 0.26941515904);
+  
   lp_context_destroy(lp_ctx);
 }
 
@@ -285,12 +278,7 @@ void test_js_node() {
   );
 
   lp_context_eval(lp_ctx);
-  lp_context_eval_js_number(lp_ctx, "output.result");
-
-  auto result = duk_get_number(lp_ctx->duk_ctx, -1);
-
-  printf("Got %f\n", result);
-  assert(result);
+  assert(lp_context_eval_js_number(lp_ctx, "output.result") == 42);
 
   lp_context_destroy(lp_ctx);
 }
@@ -299,10 +287,10 @@ void test_js_node() {
 // Main
 
 int main() {
-//  test_lpduk_get_path();
-//  test_lpduk_set_path();
-//  test_simple_context();
-//  test_lp_conn_apply();
+  test_lpduk_get_path();
+  test_lpduk_set_path();
+  test_simple_context();
+  test_lp_conn_apply();
   test_js_node();
 
 //  test_js_eval_iterations();
