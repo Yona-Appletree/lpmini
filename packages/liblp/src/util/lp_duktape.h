@@ -5,20 +5,37 @@
 #define LP_DUKTAPE_H
 
 #define PRINT_DUK_STACK lpduk_print_stack(__FILE_NAME__, __LINE__, duk_ctx, "stack dump");
-#define LP_START_FUNC auto start_stack_depth = duk_get_top(duk_ctx);
-#define LP_END_FNC \
+
+/**
+ * The start of a function that uses the duktape stack.
+ * Stores the current position of the stack for sanity checking later.
+ */
+#define LP_START_FUNC auto *duk_ctx = lp_ctx->duk_ctx;\
+                      auto start_stack_depth = duk_get_top(duk_ctx);
+
+/**
+ * The end of a function that uses the duktape stack.
+ * Verifies the stack grew or shrank by the expected amount.
+ *
+ * @param depthChange Positive if the stack should have grown
+ */
+#define LP_END_FUNC(depthChange) \
   auto end_stack_depth = duk_get_top(duk_ctx); \
-  if (start_stack_depth != end_stack_depth) { \
+  if (start_stack_depth != end_stack_depth - depthChange) { \
     PRINT_DUK_STACK \
     duk_error(duk_ctx, \
               DUK_ERR_TYPE_ERROR, \
-              "%s:%d Stack depth changed from %d to %d", \
+              "%s:%d Expected depth of %d, depth was: %d", \
               __FILE_NAME__, \
               __LINE__, \
               start_stack_depth, \
-              end_stack_depth); \
-  } \
+              end_stack_depth + depthChange); \
+  }
 
+/**
+ * Normalized pointer to the top of the stack.
+ */
+#define LP_STACK_TOP duk_normalize_index(duk_ctx, -1)
 
 const char *lpduk_pop_string(duk_context *duk_ctx);
 

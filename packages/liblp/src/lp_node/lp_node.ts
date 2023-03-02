@@ -1,7 +1,14 @@
 import { lp_conn_def } from "src/lp_conn/lp_conn";
 import { lp_obj } from "../lp_obj/lp_obj";
 
-export type lp_node_type_id = "noise" | "time";
+export type lp_node_type_id =
+  | "expr"
+  | "func"
+  | "js"
+  | "map"
+  | "noise"
+  | "time"
+
 export type lp_node_id = string
 
 export interface lp_node<
@@ -46,9 +53,6 @@ export type lp_node_instance<
   TState = unknown
 > = lp_obj<"node_instance"> & lp_node<TNodeType, TInput, TOutput, TConfig, TState>
 
-/**
- * An instance of a node in a scope.
- */
 export type lp_node_def<
   TTemplate extends lp_node = lp_node
-> = lp_obj<"node_instance"> & TTemplate
+> = lp_obj<"node_def"> & Pick<TTemplate, "nodeType"> & Partial<Exclude<TTemplate, "nodeType">>

@@ -33,17 +33,30 @@ int lp_conn_path_to_string(
   duk_push_string(duk_ctx, ".");
   duk_call_method(duk_ctx, 1);
 
-  return duk_normalize_index(duk_ctx, -1);
+  return LP_STACK_TOP;
 }
 
+/**
+ * Applies a connection within a scope.
+ *
+ * Stack: [...] -> [...]
+ *
+ * @param lp_ctx
+ * @param scopeIdx
+ * @param nodeIdx
+ * @param connectionIdx
+ * @param scopeIoIdx
+ * @return
+ */
 int lp_conn_apply(
   lp_context *lp_ctx,
 
   int scopeIdx,
   int nodeIdx,
-  int connectionIdx
+  int connectionIdx,
+  int scopeIoIdx
 ) {
-  duk_context *duk_ctx = lp_ctx->duk_ctx;
+  LP_START_FUNC
 
   //printf("\n\n=============================\n");
   //printf("scopeIdx: %d, nodeIdx: %d, connectionIdx: %d\n", scopeIdx, nodeIdx, connectionIdx);
@@ -52,12 +65,15 @@ int lp_conn_apply(
   const char *sourcePropName;
 
   if (duk_is_null_or_undefined(duk_ctx, -1)) {
+    // The datasource is the scope's input
     source_is_scope = true;
     sourcePropName = lp_scope_js_input;
 
-    duk_pop(duk_ctx); // pop the null
-    duk_dup(duk_ctx, scopeIdx); // push the scope
+    // pop the null
+    duk_pop(duk_ctx);
+    duk_dup(duk_ctx, scopeIoIdx); // push the scope io object (which may not be the scope)
   } else {
+    // The datasource is a node's output
     source_is_scope = false;
     sourcePropName = lp_node_js_output;
 
@@ -71,24 +87,24 @@ int lp_conn_apply(
     }
   }
   // scope or node should be on top of the stack
-  int sourceObjectIdx = duk_normalize_index(duk_ctx, -1);
+  int sourceObjectIdx = LP_STACK_TOP;
 
   // Get the input
   duk_get_prop_string(duk_ctx, sourceObjectIdx, sourcePropName);
-  int sourceRootIdx = duk_normalize_index(duk_ctx, -1);
+  int sourceRootIdx = LP_STACK_TOP;
 
   duk_get_prop_string(duk_ctx, connectionIdx, lp_conn_js_inputPath);
-  int inputPathIdx = duk_normalize_index(duk_ctx, -1);
+  int inputPathIdx = LP_STACK_TOP;
 
   duk_get_prop_string(duk_ctx, connectionIdx, lp_conn_js_outputPath);
-  int outputPathIdx = duk_normalize_index(duk_ctx, -1);
+  int outputPathIdx = LP_STACK_TOP;
 
   lpduk_get_path(duk_ctx, sourceRootIdx, inputPathIdx);
-  int valueIdx = duk_normalize_index(duk_ctx, -1);
+  int valueIdx = LP_STACK_TOP;
 
   // If node is null, we're setting the scope output, otherwise we're setting the node input
   duk_push_string(duk_ctx, duk_is_null_or_undefined(duk_ctx, nodeIdx) ? "output" : "input");
-  int firstOutputKeyIdx = duk_normalize_index(duk_ctx, -1);
+  int firstOutputKeyIdx = LP_STACK_TOP;
 
   int targetIdx = duk_is_null_or_undefined(duk_ctx, nodeIdx) ? scopeIdx : nodeIdx;
 
@@ -97,7 +113,7 @@ int lp_conn_apply(
 #pragma ide diagnostic ignored "UnreachableCode"
   if (false) {
     duk_get_prop_string(duk_ctx, connectionIdx, lp_conn_js_sourceNodeId);
-    int sourceNodeIdIdx = duk_normalize_index(duk_ctx, -1);
+    int sourceNodeIdIdx = LP_STACK_TOP;
 
     int sourceRootJsonIdx = lpduk_to_json(duk_ctx, sourceRootIdx);
     int inputPathJsonIdx = lp_conn_path_to_string(duk_ctx, inputPathIdx);
@@ -126,5 +142,5 @@ int lp_conn_apply(
 
   duk_pop_n(duk_ctx, 9);
 
-  return 0;
+  LP_END_FUNC(0)
 }

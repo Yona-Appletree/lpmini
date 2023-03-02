@@ -37,7 +37,8 @@ int lp_scope_create(
 int lp_scope_eval(
   lp_context *lp_ctx,
   int contextIdx,
-  int scopeIdx
+  int scopeIdx,
+  int scopeIoIdx
 );
 
 /**
@@ -59,6 +60,19 @@ int lp_scope_eval_js(
   int contextIdx,
   int scopeIdx,
   const char *js
+);
+
+/**
+ * Destroys the given scope, cleaning up any resources it may have allocated.
+ *
+ * Stack: [...] -> [...]
+ *
+ * @param lp_ctx
+ */
+void lp_scope_destroy(
+  lp_context *lp_ctx,
+  int contextIdx,
+  int scopeIdx
 );
 
 #endif

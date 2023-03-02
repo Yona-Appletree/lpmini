@@ -22,4 +22,5 @@ add_executable(
         src/lp_node/lp_map_node/lp_map_node.cc
         src/lp_node/lp_noise_node/lp_noise_node.cc
         src/lp_node/lp_time_node/lp_time_node.cc
+        src/lp_node/lp_js_node/lp_js_node.cc
 )

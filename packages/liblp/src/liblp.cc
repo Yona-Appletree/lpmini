@@ -40,6 +40,8 @@ const char *liblp_eval_expr_to_json(
   lp_context *lp_ctx,
   const char *exp
 ) {
+  //duk_gc(lp_ctx->duk_ctx, 0);
+
   lp_context_eval_js(lp_ctx, exp);
   duk_json_encode(lp_ctx->duk_ctx, -1);
 

@@ -10,8 +10,7 @@
 /**
  * Creates a new node scope for the given config and initializes the nodes.
  *
- * Assumes the scope definition is on the stack.
- * Replaces it with the scope instance.
+ * Stack: [..., scope_def] -> [..., scope_instance]
  *
  * @param ctx
  */
@@ -60,8 +59,17 @@ int lp_scope_create(
   return 0;
 }
 
+/**
+ * Gets the node IDs for the given scope.
+ *
+ * Stack: [...] -> [...]
+ *
+ * @param lp_ctx
+ * @param nodeIds
+ */
 void lp_scope_get_node_ids(
   lp_context *lp_ctx,
+  int scopeIdx,
   std::unordered_set<std::string> &nodeIds
 ) {
   duk_context *duk_ctx = lp_ctx->duk_ctx;
@@ -69,28 +77,30 @@ void lp_scope_get_node_ids(
   LP_OBJ_ASSERT_STACK(lp_obj_scope_instance)
 
   // Iterate the nodes in the scope
-  duk_get_prop_string(duk_ctx, -1, "nodes");
-  // [scope_instance, nodes]
+  duk_get_prop_string(duk_ctx, scopeIdx, "nodes");
+  // [..., nodes]
   duk_enum(duk_ctx, -1, 0);
-  // [scope_instance, nodes, enum]
+  // [..., nodes, enum]
   while (duk_next(duk_ctx, -1, 0)) {
-    // [scope_instance, nodes, enum, nodeId]
+    // [..., nodes, enum, nodeId]
     const char *nodeId = duk_get_string(duk_ctx, -1);
     nodeIds.insert(std::string(nodeId));
     duk_pop(duk_ctx);
-    // [scope_instance, nodes, enum]
+    // [..., nodes, enum]
   }
-  // [scope_instance, nodes, enum]
+  // [..., nodes, enum]
   duk_pop_2(duk_ctx);
-  // [scope_instance]
+  // [...]
 }
 
 int lp_scope_eval(
   lp_context *lp_ctx,
   int contextIdx,
-  int scopeIdx
+  int scopeIdx,
+  int scopeIoIdx
 ) {
-  duk_context *duk_ctx = lp_ctx->duk_ctx;
+  LP_START_FUNC
+  // [...]
 
   // Create a pending set of nodes to evaluate
 
@@ -104,20 +114,19 @@ int lp_scope_eval(
   //   if evaluatedThisIteration is empty, error
   //   remove all entries from evaluatedThisIteration from the pending set
 
+  // -------------------------------------------------------------------------------------------------------------------
+  // Node connections
+
   // create a hashmap of string to boolean
   std::unordered_set<std::string> pendingNodes;
 
-  lp_scope_get_node_ids(lp_ctx, pendingNodes);
+  lp_scope_get_node_ids(lp_ctx, scopeIdx, pendingNodes);
 
-  if (pendingNodes.empty()) {
-    return 0;
-  }
+  duk_get_prop_string(duk_ctx, scopeIdx, "nodes");
+  int nodesIdx = duk_normalize_index(duk_ctx, -1);
+  // [..., nodes]
 
-  // Get the nodes
-  duk_get_prop_string(duk_ctx, -1, "nodes");
-  // [scope_instance, nodes]
-
-  int scopeEvalIterationLimit = pendingNodes.size() + 2;
+  size_t scopeEvalIterationLimit = pendingNodes.size() + 2;
 
   std::unordered_set<std::string> nodeIdsEvaluatedThisIteration;
   for (int iterationIndex = 0; iterationIndex <= scopeEvalIterationLimit; iterationIndex++) {
@@ -134,34 +143,41 @@ int lp_scope_eval(
     // printf("\nIteration %d:\n", iterationIndex);
 
     for (auto targetNodeId: pendingNodes) {
-      duk_get_prop_string(duk_ctx, -1, targetNodeId.c_str());
-      // [scope_instance, nodes, node_instance]
+      duk_get_prop_string(duk_ctx, nodesIdx, targetNodeId.c_str());
+      // [..., nodes, node_instance]
 
       int nodeIdx = LP_OBJ_ASSERT_STACK(lp_obj_node_instance)
 
       // Iterate the node connections
       duk_get_prop_string(duk_ctx, nodeIdx, lp_node_js_connections);
+      // [..., nodes, node_instance, connections]
 
       duk_enum(duk_ctx, -1, 0);
+      // [..., nodes, node_instance, connections, enum]
 
       bool allDependenciesEvaluated = true;
 
       // printf("  %s:\n", targetNodeId.c_str());
 
       while (duk_next(duk_ctx, -1, 1)) {
+        // [..., nodes, node_instance, connections, enum, connection_id, connection]
         int connectionIdx = duk_normalize_index(duk_ctx, -1);
 
-        // [scope_instance, nodes, node_instance, connections, enum, connection_id, connection]
+        // [..., nodes, node_instance, connections, enum, connection_id, connection]
         duk_get_prop_string(duk_ctx, connectionIdx, lp_conn_js_sourceNodeId);
+        // [..., nodes, node_instance, connections, enum, connection_id, connection, sourceNodeId]
         const char *sourceNodeId = duk_get_string(duk_ctx, -1);
         duk_pop(duk_ctx);
+        // [..., nodes, node_instance, connections, enum, connection_id, connection]
 
         // printf("    from %s", sourceNodeId);
 
         if (sourceNodeId != nullptr && pendingNodes.find(sourceNodeId) != pendingNodes.end()) {
           // printf(" (pending)\n");
           allDependenciesEvaluated = false;
+          // [..., nodes, node_instance, connections, enum, connection_id, connection]
           duk_pop_2(duk_ctx);
+          // [..., nodes, node_instance, connections, enum]
           break;
         } else {
           // printf(" (available)\n");
@@ -172,17 +188,19 @@ int lp_scope_eval(
             lp_ctx,
             scopeIdx,
             nodeIdx,
-            connectionIdx
+            connectionIdx,
+            scopeIoIdx
           );
 
-          // [scope_instance, nodes, node_instance, connections, enum, connection_id, connection]
+          // [..., nodes, node_instance, connections, enum, connection_id, connection]
           duk_pop_2(duk_ctx);
+          // [..., nodes, node_instance, connections, enum]
         }
       }
 
-      // [scope_instance, nodes, node_instance, connections, enum]
+      // [..., nodes, node_instance, connections, enum]
       duk_pop_2(duk_ctx);
-      // [scope_instance, nodes, node_instance]
+      // [..., nodes, node_instance]
 
       if (allDependenciesEvaluated) {
         // Evaluate the node
@@ -192,6 +210,7 @@ int lp_scope_eval(
       }
 
       duk_pop(duk_ctx);
+      // [..., nodes]
     }
 
     if (nodeIdsEvaluatedThisIteration.empty()) {
@@ -209,8 +228,37 @@ int lp_scope_eval(
   }
 
   duk_pop(duk_ctx);
+  // [...]
 
-  return 0;
+  // -------------------------------------------------------------------------------------------------------------------
+  // Scope connections
+
+  duk_push_null(duk_ctx);
+  // [..., null]
+  int nullIdx = duk_normalize_index(duk_ctx, -1);
+
+  duk_get_prop_string(duk_ctx, scopeIdx, lp_scope_js_connections);
+  // [..., null, connections]
+  duk_enum(duk_ctx, -1, 0);
+  // [..., null, connections, enum]
+  while (duk_next(duk_ctx, -1, 1)) {
+    // [..., null, connections, enum, connection_id, connection]
+    int connectionIdx = duk_normalize_index(duk_ctx, -1);
+
+    lp_conn_apply(
+      lp_ctx,
+      scopeIdx,
+      nullIdx,
+      connectionIdx,
+      scopeIoIdx
+    );
+    duk_pop_2(duk_ctx);
+    // [..., null, connections, enum]
+  }
+
+  duk_pop_3(duk_ctx);
+
+  LP_END_FUNC(0)
 }
 
 int lp_scope_update(
@@ -271,4 +319,34 @@ int lp_scope_eval_js(
   duk_call(lp_ctx->duk_ctx, paramCount);
 
   return 0;
+}
+
+/**
+ * Destroys the given scope, cleaning up any resources it may have allocated.
+ *
+ * Stack: [...] -> [...]
+ *
+ * @param lp_ctx
+ */
+void lp_scope_destroy(
+  lp_context *lp_ctx,
+  int contextIdx,
+  int scopeIdx
+) {
+  duk_context *duk_ctx = lp_ctx->duk_ctx;
+
+  // Iterate the nodes in the scope
+  duk_get_prop_string(duk_ctx, -1, "nodes");
+  // [scope_instance, nodes]
+  duk_enum(duk_ctx, -1, 0);
+  // [scope_instance, nodes, enum]
+  while (duk_next(duk_ctx, -1, 1)) {
+    // [scope_instance, nodes, enum, nodeId, nodeInstance]
+    lp_node_destroy(lp_ctx, contextIdx, scopeIdx);
+    // [scope_instance, nodes, enum, nodeId]
+    duk_pop(duk_ctx);
+  }
+  // [scope_instance, nodes, enum]
+  duk_pop_3(duk_ctx);
+  // []
 }

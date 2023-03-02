@@ -24,7 +24,8 @@ int lp_conn_apply(
 
   int scopeIdx,
   int nodeIdx,
-  int connectionIdx
+  int connectionIdx,
+  int scopeIoIdx
 );
 
 #endif

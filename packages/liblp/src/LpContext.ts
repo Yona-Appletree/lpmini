@@ -1,12 +1,10 @@
 import { lp_context_def } from "src/lp_context/lp_context";
-import { lp_scope_instance } from "src/lp_scope/lp_scope";
+import { lp_scope_def } from "src/lp_scope/lp_scope";
 import { liblp, liblp_context_ptr, liblp_promise } from "./liblp";
-import { lp_node_id, lp_node_instance } from "./lp_node/lp_node";
+import { lp_node_def, lp_node_id } from "./lp_node/lp_node";
 import { applyDeepPartial, PartialDeep } from "./util/PartialDeep";
 
 export default class LpContext<TContextDef extends lp_context_def> {
-  private nodeCount = 0;
-
   static async create<TContextDef extends lp_context_def>(
     definition: TContextDef
   ) {
@@ -33,35 +31,78 @@ export default class LpContext<TContextDef extends lp_context_def> {
   tick() {
     this.api.liblp_context_tick(this.contextPtr);
   }
+
+  evalToJson(expr: string) {
+    return this.api.liblp_eval_expr_to_json(
+      this.contextPtr,
+      expr
+    );
+  }
+
+  readonly rootScope: LpScope<TContextDef["rootScopeDef"]> = new LpScope(this);
 }
 
-export class LpScope<TScopeDef extends lp_scope_instance> {
-
-}
-
-export class LpNode<TNodeDef extends lp_node_instance> {
+export class LpScope<TScopeDef extends lp_scope_def = lp_scope_def> {
   constructor(
-    public lpContext: LpContext<any>,
+    public lpContext: LpContext<any>
+  ) {
+  }
+
+  private _nodes: Record<lp_node_id, LpNode> = {};
+  nodes = new Proxy(
+    {},
+    {
+      get: (
+        _,
+        nodeId: keyof TScopeDef["nodes"] | symbol
+      ) => {
+        if (nodeId in this._nodes) {
+          return this._nodes[nodeId as lp_node_id];
+        }
+
+        const node = new LpNode(
+          this,
+          nodeId as lp_node_id
+        );
+        this._nodes[nodeId as lp_node_id] = node;
+
+        return node;
+      }
+    }
+  ) as Record<keyof TScopeDef["nodes"], LpNode>;
+}
+
+export class LpNode<TNodeDef extends lp_node_def = lp_node_def> {
+  constructor(
+    public readonly lpScope: LpScope<any>,
     private nodeId: lp_node_id
   ) {
   }
 
+  private get lpContext() {
+    return this.lpScope.lpContext;
+  }
+
+  private get api() {
+    return this.lpScope.lpContext.api;
+  }
+
   get state() {
-    return JSON.parse(this.lpContext.api.liblp_eval_expr_to_json(
+    return JSON.parse(this.api.liblp_eval_expr_to_json(
       this.lpContext.contextPtr,
       `nodes.${this.nodeId}`
     )) as TNodeDef;
   }
 
   get input() {
-    return JSON.parse(this.lpContext.api.liblp_eval_expr_to_json(
+    return JSON.parse(this.api.liblp_eval_expr_to_json(
       this.lpContext.contextPtr,
       `nodes.${this.nodeId}.input`
     ));
   }
 
   set input(input: TNodeDef["input"]) {
-    this.lpContext.api.liblp_eval_expr_to_json(
+    this.api.liblp_eval_expr_to_json(
       this.lpContext.contextPtr,
       `nodes.${this.nodeId}.input=` + JSON.stringify(input)
     );

@@ -5,11 +5,17 @@ configured with a web-based node style programming environment similar to NodeRE
 
 ## Development
 
-Ensure you have `pnpm` and `docker-compose` installed.
+Install prerequisites:
+
+```
+brew install nvm
+nvm install
+npm install -g pnpm
+``
+```
 
 - run `pnpm install` to install dependencies
-- `cd packages/liblp && pnpm run dev` to build the wasm module
-- `cd packages/lpweb && pnpm run build:watch` to start the development server
+- `cd packages/liblp && pnpm run test:watch` to interactively build the wasm module and run tests
 
 # Design
 

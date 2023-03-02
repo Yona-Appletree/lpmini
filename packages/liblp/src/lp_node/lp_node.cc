@@ -6,6 +6,7 @@
 #include "lp_map_node/lp_map_node.h"
 #include "lp_func_node/lp_func_node.h"
 #include "lp_time_node/lp_time_node.h"
+#include "lp_js_node/lp_js_node.h"
 
 const lp_node_type_def *lp_node_type_defs[] = {
   &lp_noise_node_def,
@@ -13,6 +14,7 @@ const lp_node_type_def *lp_node_type_defs[] = {
   &lp_map_node_def,
   &lp_func_node_def,
   &lp_time_node_def,
+  &lp_js_node_def,
   nullptr
 };
 
@@ -116,6 +118,38 @@ int lp_node_create(
   if (node_type_def->init_func != nullptr) {
     node_type_def->init_func(lp_ctx, contextId, scopeIdx, nodeInstIdx);
   }
+
+  return 0;
+}
+
+/**
+ * Destroy a given node.
+ *
+ * Stack: [..., node_instance] -> [...]
+ *
+ * @param lp_ctx
+ * @return
+ */
+int lp_node_destroy(
+  lp_context *lp_ctx,
+  int contextIdx,
+  int scopeIdx
+) {
+  duk_context *duk_ctx = lp_ctx->duk_ctx;
+
+  int nodeIdx = LP_OBJ_ASSERT_STACK(lp_obj_node_instance);
+
+  duk_get_prop_string(duk_ctx, nodeIdx, "nodeType");
+  const char *node_type_id = duk_get_string(duk_ctx, -1);
+  duk_pop(duk_ctx);
+
+  const lp_node_type_def *node_type_def = lp_node_type_def_by_id(node_type_id);
+
+  if (node_type_def->destroy_func != nullptr) {
+    node_type_def->destroy_func(lp_ctx, contextIdx, scopeIdx, nodeIdx);
+  }
+
+  duk_pop(duk_ctx);
 
   return 0;
 }

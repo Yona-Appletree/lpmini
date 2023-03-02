@@ -7,10 +7,11 @@
   },
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "rm -rf ./build",
     "build": "./build-wrapper.sh",
-    "build:watch": "nodemon -e 'cc,cpp,h,sh' --watch . --exec './build-wrapper.sh'"
+    "build:watch": "nodemon -e 'cc,cpp,h,sh' --watch . --exec './build-wrapper.sh'",
+    "test": "jest",
+    "test:watch": "concurrently --names \"jest,build:watch\" \"jest --watch .\" \"pnpm run build:watch\""
   },
   "keywords": [
     "emscripten",

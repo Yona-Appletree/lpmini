@@ -74,4 +74,18 @@ int lp_node_update(
   int nodeIdx
 );
 
+/**
+ * Destroy a given node.
+ *
+ * Stack: [..., node_instance] -> [...]
+ *
+ * @param lp_ctx
+ * @return
+ */
+int lp_node_destroy(
+  lp_context *lp_ctx,
+  int contextIdx,
+  int scopeIdx
+);
+
 #endif

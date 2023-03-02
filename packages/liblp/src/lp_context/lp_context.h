@@ -3,6 +3,14 @@
 
 #include "../duktape/duktape.h"
 
+/**
+ * Name of the global variable that contains the context.
+ */
+static auto lp_context_global_js = "context";
+static auto lp_context_def_js_rootScopeDef = "rootScopeDef";
+static auto lp_context_instance_js_rootScope = "rootScope";
+static auto lp_context_instance_js_log = "log";
+
 typedef struct {
     duk_context *duk_ctx;
     int frame_counter;

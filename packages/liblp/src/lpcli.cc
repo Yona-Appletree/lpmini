@@ -133,7 +133,7 @@ void test_lpduk_set_path() {
     duk_normalize_index(duk_ctx, -1)
   );
   duk_eval_string(duk_ctx, "x.child.cval");
-  printf("result: %f", duk_get_number(duk_ctx, -1));
+  printf("result: %f\n", duk_get_number(duk_ctx, -1));
   assert(duk_get_number(duk_ctx, -1) == 1000);
 }
 
@@ -154,10 +154,8 @@ void test_partial_apply() {
 
   duk_dup(duk_ctx, targetIdx);
   duk_json_encode(duk_ctx, -1);
-  printf("result: %s", duk_get_string(duk_ctx, -1));
+  printf("result: %s\n", duk_get_string(duk_ctx, -1));
 }
-
-
 
 // =====================================================================================================================
 // Basic Test
@@ -205,17 +203,109 @@ void test_simple_context() {
 
   // print the result
   lp_context_to_json(lp_ctx);
-  printf("%s", lpduk_pop_string(lp_ctx->duk_ctx));
+  printf("%s\n", lpduk_pop_string(lp_ctx->duk_ctx));
 
   lp_context_destroy(lp_ctx);
 }
 
+// =====================================================================================================================
+// JS Eval Test Iterations
+
+void test_js_eval_iterations() {
+  printf("Running test_js_eval_iterations...\n");
+
+  auto lp_ctx = lp_context_create(
+    R"(
+{
+  "objType": "context_def",
+  "rootScopeDef": {
+    "objType": "scope_def",
+    "nodes": {
+      "node0": {
+        "objType": "node_def",
+        "nodeType": "noise",
+        "input": {
+          "pos": [0.5, 0.2, 0.1]
+        }
+      }
+    },
+    "connections": {},
+    "input": {},
+    "output": {}
+  }
+}
+)"
+  );
+
+  // print the result
+  for (int i = 0; i < 10000; i++) {
+    lp_context_eval_js(lp_ctx, "nodes.node0.input.pos[0]");
+    lpduk_pop_string(lp_ctx->duk_ctx);
+  }
+
+  force_gc(lp_ctx);
+  lp_context_destroy(lp_ctx);
+}
+
+
+// =====================================================================================================================
+// JS Node Test
+
+void test_js_node() {
+  printf("Running test_js_node...\n");
+
+  auto lp_ctx = lp_context_create(
+    R"(
+{
+  "objType": "context_def",
+  "rootScopeDef": {
+    "objType": "scope_def",
+    "nodes": {
+      "node0": {
+        "objType": "node_def",
+        "nodeType": "js",
+        "config": {
+          "evalJs": "return 42;"
+        }
+      }
+    },
+    "connections": {
+      "c1": {
+        "objType": "connection_def",
+        "sourceNodeId": "node0",
+        "inputPath": [],
+        "outputPath": ["result"]
+      }
+    },
+    "input": {},
+    "output": {}
+  }
+}
+)"
+  );
+
+  lp_context_eval(lp_ctx);
+  lp_context_eval_js_number(lp_ctx, "output.result");
+
+  auto result = duk_get_number(lp_ctx->duk_ctx, -1);
+
+  printf("Got %f\n", result);
+  assert(result);
+
+  lp_context_destroy(lp_ctx);
+}
+
+// =====================================================================================================================
+// Main
 
 int main() {
-  test_lpduk_get_path();
-  test_lpduk_set_path();
-  test_simple_context();
-  test_lp_conn_apply();
+//  test_lpduk_get_path();
+//  test_lpduk_set_path();
+//  test_simple_context();
+//  test_lp_conn_apply();
+  test_js_node();
+
+//  test_js_eval_iterations();
 
   return 0;
 }
