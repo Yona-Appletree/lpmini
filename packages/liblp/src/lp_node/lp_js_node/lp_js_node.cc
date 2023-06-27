@@ -34,7 +34,8 @@ int lp_js_node_init(
   int scopeIdx,
   int nodeIdx
 ) {
-  duk_context *duk_ctx = lp_ctx->duk_ctx;
+  LP_START_FUNC
+
   duk_get_prop_string(duk_ctx, nodeIdx, "config");
   int configIdx = duk_normalize_index(duk_ctx, -1);
 
@@ -44,13 +45,8 @@ int lp_js_node_init(
   // Init function
   duk_get_prop_string(duk_ctx, configIdx, "initJs");
   if (!duk_is_null_or_undefined(duk_ctx, -1)) {
-    duk_push_string(duk_ctx, "function(state){");
-    duk_swap_top(duk_ctx, -2);
-    duk_push_string(duk_ctx, "}");
-    duk_concat(duk_ctx, 3);
     duk_push_string(duk_ctx, "lp_js_node_initJs"); // filename
     duk_compile(duk_ctx, DUK_COMPILE_FUNCTION | DUK_COMPILE_STRICT);
-    duk_dup(duk_ctx, -1);
     duk_put_prop_string(duk_ctx, stateIdx, "initFn");
   } else {
     duk_pop(duk_ctx);
@@ -59,10 +55,6 @@ int lp_js_node_init(
   // Update function
   duk_get_prop_string(duk_ctx, configIdx, "updateJs");
   if (!duk_is_null_or_undefined(duk_ctx, -1)) {
-    duk_push_string(duk_ctx, "function(state){");
-    duk_swap_top(duk_ctx, -2);
-    duk_push_string(duk_ctx, "}");
-    duk_concat(duk_ctx, 3);
     duk_push_string(duk_ctx, "lp_js_node_updateJs"); // filename
     duk_compile(duk_ctx, DUK_COMPILE_FUNCTION | DUK_COMPILE_STRICT);
     duk_put_prop_string(duk_ctx, stateIdx, "updateFn");
@@ -73,10 +65,6 @@ int lp_js_node_init(
   // Eval function
   duk_get_prop_string(duk_ctx, configIdx, "evalJs");
   if (!duk_is_null_or_undefined(duk_ctx, -1)) {
-    duk_push_string(duk_ctx, "function(state, input){");
-    duk_swap_top(duk_ctx, -2);
-    duk_push_string(duk_ctx, "}");
-    duk_concat(duk_ctx, 3);
     duk_push_string(duk_ctx, "lp_js_node_evalJs"); // filename
     duk_compile(duk_ctx, DUK_COMPILE_FUNCTION | DUK_COMPILE_STRICT);
     duk_put_prop_string(duk_ctx, stateIdx, "evalFn");
@@ -87,10 +75,6 @@ int lp_js_node_init(
   // Destroy function
   duk_get_prop_string(duk_ctx, configIdx, "destroyJs");
   if (!duk_is_null_or_undefined(duk_ctx, -1)) {
-    duk_push_string(duk_ctx, "function(state, input){");
-    duk_swap_top(duk_ctx, -2);
-    duk_push_string(duk_ctx, "}");
-    duk_concat(duk_ctx, 3);
     duk_push_string(duk_ctx, "lp_js_node_destroyJs"); // filename
     duk_compile(duk_ctx, DUK_COMPILE_FUNCTION | DUK_COMPILE_STRICT);
     duk_put_prop_string(duk_ctx, stateIdx, "destroyFn");
@@ -101,15 +85,15 @@ int lp_js_node_init(
   // Call the init function
   duk_get_prop_string(duk_ctx, stateIdx, "initFn");
   if (duk_is_function(duk_ctx, -1)) {
-    duk_dup(duk_ctx, stateIdx);
-    duk_call(duk_ctx, 1);
-    duk_pop(duk_ctx); // return value (undefined)
+    duk_call(duk_ctx, 0);
+    duk_put_prop_string(duk_ctx, nodeIdx, "state");
   } else {
     duk_pop(duk_ctx);
   }
 
   duk_pop_2(duk_ctx); // config, state
-  return 0;
+
+  LP_END_FUNC(0)
 }
 
 

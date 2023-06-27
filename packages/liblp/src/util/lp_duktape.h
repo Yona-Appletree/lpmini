@@ -19,10 +19,9 @@
  *
  * @param depthChange Positive if the stack should have grown
  */
-#define LP_END_FUNC(depthChange) \
+#define LP_END_FUNC(depthChange) { \
   auto end_stack_depth = duk_get_top(duk_ctx); \
   if (start_stack_depth != end_stack_depth - depthChange) { \
-    PRINT_DUK_STACK \
     duk_error(duk_ctx, \
               DUK_ERR_TYPE_ERROR, \
               "%s:%d Expected depth of %d, depth was: %d", \
@@ -30,7 +29,8 @@
               __LINE__, \
               start_stack_depth, \
               end_stack_depth + depthChange); \
-  }
+  }\
+}
 
 /**
  * Normalized pointer to the top of the stack.
@@ -120,7 +120,7 @@ void lpduk_get_path(
 void lpduk_set_path(
   duk_context *duk_ctx,
   int rootIdx,
-  int firstPropIndex,
+  int firstPropIdx,
   int pathArrayIdx,
   int valueIdx
 );

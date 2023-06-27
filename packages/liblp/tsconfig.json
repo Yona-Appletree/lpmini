@@ -86,15 +86,5 @@
     /* Skip type checking of declaration files. */
     "forceConsistentCasingInFileNames": true
     /* Disallow inconsistently-cased references to the same file. */
-  },
-  "include": [
-    "src/**/*",
-    "build/*.ts"
-  ],
-  "rootDirs": [
-    "."
-  ],
-  "types": [
-    "node_modules/@types/*"
-  ]
+  }
 }

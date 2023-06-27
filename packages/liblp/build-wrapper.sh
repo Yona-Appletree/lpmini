@@ -17,7 +17,12 @@ else
     echo "emscripten not found, using docker for build. This is probably slower."
     docker-compose run --rm builder || exit 1
   else
-    echo "Neither em++ or docker-compose could be found. Please install emscripten or docker."
+    echo "Neither em++ or docker-compose could be found."
+    echo "Please install emscripten:"
+    echo "    brew install emscripten"
+    echo
+    echo "Or ensure Docker is available"
+    echo
     exit 1
   fi
 fi

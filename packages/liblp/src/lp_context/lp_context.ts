@@ -15,3 +15,10 @@ export interface lp_context_log_entry {
   severity: number;
   message: string;
 }
+
+export function lp_context(rootScopeDef: lp_scope_def) {
+  return {
+    objType: "context_def",
+    rootScopeDef
+  }
+}

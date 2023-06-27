@@ -4,8 +4,8 @@
 #include "../lp_context/lp_context.h"
 
 static const char *lp_conn_js_sourceNodeId = "sourceNodeId";
-static const char *lp_conn_js_inputPath = "inputPath";
-static const char *lp_conn_js_outputPath = "outputPath";
+static const char *lp_conn_js_inputPath = "sourcePath";
+static const char *lp_conn_js_outputPath = "destPath";
 
 int lp_conn_create(
   lp_context *lp_ctx

@@ -138,8 +138,11 @@ int lp_conn_apply(
   }
 #pragma clang diagnostic pop
 
+  PRINT_DUK_STACK
+
   lpduk_set_path(duk_ctx, targetIdx, firstOutputKeyIdx, outputPathIdx, valueIdx);
 
+  PRINT_DUK_STACK
   duk_pop_n(duk_ctx, 9);
 
   LP_END_FUNC(0)

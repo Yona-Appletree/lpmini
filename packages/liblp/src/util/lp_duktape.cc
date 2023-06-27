@@ -259,37 +259,65 @@ void lpduk_get_path(
   }
 }
 
+/**
+ * Stack: [ ... ] => [ ... ]
+ *
+ * @param duk_ctx
+ * @param rootIdx
+ * @param firstPropIdx
+ * @param pathArrayIdx
+ * @param valueIdx
+ */
 void lpduk_set_path(
   duk_context *duk_ctx,
   int rootIdx,
-  int firstPropIndex,
+  int firstPropIdx,
   int pathArrayIdx,
   int valueIdx
 ) {
+  auto start_stack_depth = duk_get_top(duk_ctx);
+
+  PRINT_DUK_STACK
   // Push the root on the top of the stack
   duk_dup(duk_ctx, rootIdx);
+  // [..., root]
   int tempIdx = duk_normalize_index(duk_ctx, -1);
 
   auto length = duk_get_length(duk_ctx, pathArrayIdx);
+  // [..., root]
   for (int i = 0; i <= length; i++) {
+    PRINT_DUK_STACK
     if (i == 0) {
-      duk_dup(duk_ctx, firstPropIndex);
+      PRINT_DUK_STACK
+      duk_dup(duk_ctx, firstPropIdx);
+      // [..., root, firstProp]
       duk_get_prop(duk_ctx, tempIdx);
+      // [..., root, root.firstProp]
       duk_swap_top(duk_ctx, tempIdx);
+      // [..., root.firstProp, root]
+      duk_pop(duk_ctx);
+      // [..., root.firstProp]
       continue;
     } else {
+      PRINT_DUK_STACK
       duk_get_prop_index(duk_ctx, pathArrayIdx, i - 1);
     }
 
     if (i == length) {
+      PRINT_DUK_STACK
       duk_dup(duk_ctx, valueIdx);
       duk_put_prop(duk_ctx, tempIdx);
     } else {
+      PRINT_DUK_STACK
       duk_get_prop(duk_ctx, tempIdx);
       duk_swap_top(duk_ctx, tempIdx);
       duk_pop(duk_ctx);
     }
   }
+
+  PRINT_DUK_STACK
+
+  LP_END_FUNC(0)
 }
 
 
